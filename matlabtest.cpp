@@ -70,8 +70,8 @@ int main( )
     // Set simulation time settings.
     const double simulationStartEpoch = 7.0 * tudat::physical_constants::JULIAN_YEAR +
             30.0 * 6.0 * tudat::physical_constants::JULIAN_DAY;
-    const double simulationEndEpoch = 10.0 + simulationStartEpoch;
-//    const double simulationEndEpoch = 1.0 * tudat::physical_constants::JULIAN_DAY + simulationStartEpoch;
+//    const double simulationEndEpoch = 10.0 + simulationStartEpoch;
+    const double simulationEndEpoch = 1.0 * tudat::physical_constants::JULIAN_DAY + simulationStartEpoch;
 
     // Define body settings for simulation.
     std::vector< std::string > bodiesToCreate;
@@ -141,27 +141,28 @@ int main( )
 
     // Define propagation settings.
     std::map< std::string, std::vector< boost::shared_ptr< AccelerationSettings > > > accelerationsOfSatellite;
-    accelerationsOfSatellite[ "Mars" ].push_back( boost::make_shared< AccelerationSettings >(
-                                                      basic_astrodynamics::central_gravity ) );
-//    accelerationsOfSatellite[ "Mars" ].push_back( boost::make_shared< SphericalHarmonicAccelerationSettings >( 21, 21 ) );
-
-//    for( unsigned int i = 0; i < bodiesToCreate.size( ); i++ )
-//    {
-//        if( i != 1 )
-//        {
-//            accelerationsOfSatellite[ bodiesToCreate.at( i ) ].push_back( boost::make_shared< AccelerationSettings >(
-//                                                                              basic_astrodynamics::central_gravity ) );
-//        }
-//    }
-//    accelerationsOfSatellite[ "Sun" ].push_back( boost::make_shared< AccelerationSettings >(
-//                                                     basic_astrodynamics::cannon_ball_radiation_pressure ) );
-
 //    accelerationsOfSatellite[ "Mars" ].push_back( boost::make_shared< AccelerationSettings >(
-//                                                     basic_astrodynamics::aerodynamic ) );
+//                                                      basic_astrodynamics::central_gravity ) );
+    accelerationsOfSatellite[ "Mars" ].push_back( boost::make_shared< SphericalHarmonicAccelerationSettings >( 21, 21 ) );
 
-//    accelerationMap[ "Satellite" ] = accelerationsOfSatellite;
-//    bodiesToPropagate.push_back( "Satellite" );
-//    centralBodies.push_back( "Mars" );
+    for( unsigned int i = 0; i < bodiesToCreate.size( ); i++ )
+    {
+        if( i != 1 )
+        {
+            accelerationsOfSatellite[ bodiesToCreate.at( i ) ].push_back( boost::make_shared< AccelerationSettings >(
+                                                                              basic_astrodynamics::central_gravity ) );
+        }
+    }
+    accelerationsOfSatellite[ "Sun" ].push_back( boost::make_shared< AccelerationSettings >(
+                                                     basic_astrodynamics::cannon_ball_radiation_pressure ) );
+
+    accelerationsOfSatellite[ "Mars" ].push_back( boost::make_shared< AccelerationSettings >(
+                                                     basic_astrodynamics::aerodynamic ) );
+
+    // Add acceleration information
+    accelerationMap[ "Satellite" ] = accelerationsOfSatellite;
+    bodiesToPropagate.push_back( "Satellite" );
+    centralBodies.push_back( "Mars" );
 
     basic_astrodynamics::AccelerationMap accelerationModelMap = createAccelerationModelsMap(
                 bodyMap, accelerationMap, bodiesToPropagate, centralBodies );
@@ -212,11 +213,11 @@ int main( )
     boost::shared_ptr< TranslationalStatePropagatorSettings< double > > propagatorSettings =
             boost::make_shared< TranslationalStatePropagatorSettings< double > >
             ( centralBodies, accelerationModelMap, bodiesToPropagate, SatelliteInitialState, simulationEndEpoch,
-              gauss_keplerian ); // gauss_keplerian, unified_state_model_quaternions, unified_state_model_exponential_map
+              unified_state_model_exponential_map ); // gauss_keplerian, unified_state_model_quaternions, unified_state_model_exponential_map
 //    boost::shared_ptr< TranslationalStatePropagatorSettings< double > > propagatorSettings =
 //            boost::make_shared< TranslationalStatePropagatorSettings< double > >
 //            ( centralBodies, accelerationModelMap, bodiesToPropagate, SatelliteInitialState, terminationSettings,
-//              unified_state_model_quaternions, boost::make_shared< DependentVariableSaveSettings >( dependentVariables ) );
+//              cowell, boost::make_shared< DependentVariableSaveSettings >( dependentVariables ) );
 
     // Integrator settings
     boost::shared_ptr< IntegratorSettings< > > integratorSettings =
