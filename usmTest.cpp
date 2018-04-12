@@ -21,7 +21,7 @@ static inline std::string getOutputPath(
 
     // Strip filename from temporary string and return root-path string.
     std::string reducedPath = filePath_.substr( 0, filePath_.length( ) -
-                                                std::string( "matlabtest.cpp" ).length( ) );
+                                                std::string( "usmTest.cpp" ).length( ) );
     std::string outputPath = reducedPath + "SimulationOutput/";
     if( extraDirectory != "" )
     {
@@ -213,7 +213,7 @@ int main( )
     boost::shared_ptr< TranslationalStatePropagatorSettings< double > > propagatorSettings =
             boost::make_shared< TranslationalStatePropagatorSettings< double > >
             ( centralBodies, accelerationModelMap, bodiesToPropagate, SatelliteInitialState, simulationEndEpoch,
-              unified_state_model_exponential_map ); // gauss_keplerian, unified_state_model_quaternions, unified_state_model_exponential_map
+              unified_state_model_quaternions ); // gauss_keplerian, unified_state_model_quaternions, unified_state_model_exponential_map
 //    boost::shared_ptr< TranslationalStatePropagatorSettings< double > > propagatorSettings =
 //            boost::make_shared< TranslationalStatePropagatorSettings< double > >
 //            ( centralBodies, accelerationModelMap, bodiesToPropagate, SatelliteInitialState, terminationSettings,

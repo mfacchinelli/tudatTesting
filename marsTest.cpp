@@ -21,7 +21,7 @@ static inline std::string getOutputPath(
 
     // Strip filename from temporary string and return root-path string.
     std::string reducedPath = filePath_.substr( 0, filePath_.length( ) -
-                                                std::string( "matlabtest.cpp" ).length( ) );
+                                                std::string( "marsTest.cpp" ).length( ) );
     std::string outputPath = reducedPath + "SimulationOutput/";
     if( extraDirectory != "" )
     {

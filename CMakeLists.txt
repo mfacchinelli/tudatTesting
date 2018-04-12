@@ -221,12 +221,18 @@ list(APPEND TUDAT_APPLICATION_ESTIMATION_LIBRARIES tudat_simulation_setup tudat_
     tudat_statistics tudat_propagators ${TUDAT_APPLICATION_EXTERNAL_INTERFACE_LIBRARIES} tudat_basic_astrodynamics tudat_basic_mathematics
     tudat_input_output tudat_basics ${TUDAT_APPLICATION_EXTERNAL_LIBRARIES})
 
-# Add MATLAB test
-add_executable(application_matlabtest "${SRCROOT}/matlabtest.cpp")
-setup_executable_target(application_matlabtest "${SRCROOT}")
-target_link_libraries(application_matlabtest ${TUDAT_APPLICATION_PROPAGATION_LIBRARIES} ${Boost_LIBRARIES} )
+# Add USM test
+add_executable(application_usmTest "${SRCROOT}/usmTest.cpp")
+setup_executable_target(application_usmTest "${SRCROOT}")
+target_link_libraries(application_usmTest ${TUDAT_APPLICATION_PROPAGATION_LIBRARIES} ${Boost_LIBRARIES} )
 
 # Add Mars test
-add_executable(application_mars "${SRCROOT}/mars.cpp")
-setup_executable_target(application_mars "${SRCROOT}")
-target_link_libraries(application_mars ${TUDAT_APPLICATION_PROPAGATION_LIBRARIES} ${Boost_LIBRARIES} )
+add_executable(application_marsTest "${SRCROOT}/marsTest.cpp")
+setup_executable_target(application_marsTest "${SRCROOT}")
+target_link_libraries(application_marsTest ${TUDAT_APPLICATION_PROPAGATION_LIBRARIES} ${Boost_LIBRARIES} )
+
+# Add conversion test
+add_executable(application_conversionTest "${SRCROOT}/conversionTest.cpp")
+setup_executable_target(application_conversionTest "${SRCROOT}")
+target_link_libraries(application_conversionTest tudat_basic_astrodynamics
+    tudat_input_output tudat_basics tudat_reference_frames ${Boost_LIBRARIES} )
