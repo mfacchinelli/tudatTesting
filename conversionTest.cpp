@@ -11,7 +11,6 @@
 #include "Tudat/Astrodynamics/BasicAstrodynamics/physicalConstants.h"
 #include "Tudat/Astrodynamics/BasicAstrodynamics/timeConversions.h"
 #include "Tudat/Astrodynamics/BasicAstrodynamics/unitConversions.h"
-//#include "Tudat/Astrodynamics/BasicAstrodynamics/keplerPropagator.h"
 #include "Tudat/Astrodynamics/BasicAstrodynamics/sphericalStateConversions.h"
 #include "Tudat/Astrodynamics/BasicAstrodynamics/stateRepresentationConversions.h"
 #include "Tudat/Astrodynamics/ReferenceFrames/referenceFrameTransformations.h"
@@ -22,21 +21,6 @@
 #include "Tudat/Mathematics/BasicMathematics/linearAlgebra.h"
 #include "Tudat/Basics/basicTypedefs.h"
 #include "Tudat/Mathematics/BasicMathematics/mathematicalConstants.h"
-//#include "Tudat/Mathematics/NumericalIntegrators/createNumericalIntegrator.h"
-//#include "Tudat/Mathematics/Interpolators/createInterpolator.h"
-
-//#include "Tudat/SimulationSetup/EnvironmentSetup/body.h"
-//#include "Tudat/SimulationSetup/EnvironmentSetup/createBodies.h"
-//#include "Tudat/SimulationSetup/EnvironmentSetup/defaultBodies.h"
-//#include "Tudat/SimulationSetup/EstimationSetup/createEstimatableParameters.h"
-//#include "Tudat/SimulationSetup/EstimationSetup/estimatableParameterSettings.h"
-//#include "Tudat/SimulationSetup/PropagationSetup/accelerationSettings.h"
-//#include "Tudat/SimulationSetup/PropagationSetup/propagationSettings.h"
-//#include "Tudat/SimulationSetup/PropagationSetup/propagationOutputSettings.h"
-//#include "Tudat/SimulationSetup/PropagationSetup/propagationTerminationSettings.h"
-//#include "Tudat/SimulationSetup/PropagationSetup/createNumericalSimulator.h"
-//#include "Tudat/SimulationSetup/PropagationSetup/thrustSettings.h"
-//#include "Tudat/SimulationSetup/PropagationSetup/createMassRateModels.h"
 
 //! Get path for output directory.
 static inline std::string getOutputPath(
@@ -71,18 +55,10 @@ int main( )
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     using namespace tudat;
-//    using namespace tudat::simulation_setup;
-//    using namespace tudat::propagators;
-//    using namespace tudat::numerical_integrators;
     using namespace tudat::orbital_element_conversions;
     using namespace tudat::unit_conversions;
     using namespace tudat::basic_mathematics;
-//    using namespace tudat::gravitation;
-//    using namespace tudat::numerical_integrators;
-//    using namespace tudat::estimatable_parameters;
-//    using namespace tudat::ephemerides;
     using namespace tudat::input_output;
-//    using namespace tudat::root_finders;
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ///////////////////////       CREATE KEPLER ELEMENT STATE        //////////////////////////////////////////////////////
@@ -129,18 +105,22 @@ int main( )
 
     // Create map of results
     std::map< int, Eigen::Vector6d > keplerianElementsInput;
-    std::map< int, Eigen::Vector6d > keplerianElementsUSMEMOutput;
     std::map< int, Eigen::Vector6d > keplerianElementsUSM7Output;
-    std::map< int, Eigen::Vector6d > unifiedStateModelExponentialMapElementsOutput;
+    std::map< int, Eigen::Vector6d > keplerianElementsUSM6Output;
+    std::map< int, Eigen::Vector6d > keplerianElementsUSMEMOutput;
     std::map< int, Eigen::Vector7d > unifiedStateModelQuaternionsElementsOutput;
+    std::map< int, Eigen::Vector6d > unifiedStateModelModifiedRodriguesParametersElementsOutput;
+    std::map< int, Eigen::Vector6d > unifiedStateModelExponentialMapElementsOutput;
 
     // Loop over angles
     int loopIndex = 1;
     double tolerance = 1e-15;
-    Eigen::Vector6d convertedKeplerianElementsUSMEM = Eigen::Vector6d::Zero( );
     Eigen::Vector6d convertedKeplerianElementsUSM7 = Eigen::Vector6d::Zero( );
-    Eigen::Vector6d convertedUnifiedStateModelExponentialMapElements = Eigen::Vector6d::Zero( );
+    Eigen::Vector6d convertedKeplerianElementsUSM6 = Eigen::Vector6d::Zero( );
+    Eigen::Vector6d convertedKeplerianElementsUSMEM = Eigen::Vector6d::Zero( );
     Eigen::Vector7d convertedUnifiedStateModelQuaternionsElements = Eigen::Vector7d::Zero( );
+    Eigen::Vector6d convertedUnifiedStateModelModifiedRodriguesParametersElements = Eigen::Vector6d::Zero( );
+    Eigen::Vector6d convertedUnifiedStateModelExponentialMapElements = Eigen::Vector6d::Zero( );
     for ( std::vector< double >::const_iterator i = inclinationAngles.begin( ); i != inclinationAngles.end( ); ++i )
     {
         for ( std::vector< double >::const_iterator O = rightAscensionOfAscendingNodeAngles.begin( ); O != rightAscensionOfAscendingNodeAngles.end( ); ++O )
@@ -161,14 +141,6 @@ int main( )
                         keplerianElements( longitudeOfAscendingNodeIndex ) = 0.0;
                     }
 
-                    // Convert to USMEM
-                    convertedUnifiedStateModelExponentialMapElements = convertKeplerianToUnifiedStateModelWithExponentialMapElements(
-                                keplerianElements, centralBodyGravitationalParameter );
-
-                    // Convert back to Keplerian
-                    convertedKeplerianElementsUSMEM = convertUnifiedStateModelWithExponentialMapToKeplerianElements(
-                                convertedUnifiedStateModelExponentialMapElements, centralBodyGravitationalParameter );
-
                     // Convert to USM7
                     convertedUnifiedStateModelQuaternionsElements = convertKeplerianToUnifiedStateModelWithQuaternionsElements(
                                 keplerianElements, centralBodyGravitationalParameter );
@@ -177,12 +149,33 @@ int main( )
                     convertedKeplerianElementsUSM7 = convertUnifiedStateModelWithQuaternionsToKeplerianElements(
                                 convertedUnifiedStateModelQuaternionsElements, centralBodyGravitationalParameter );
 
+                    // Convert to USM6
+                    convertedUnifiedStateModelModifiedRodriguesParametersElements =
+                            convertKeplerianToUnifiedStateModelWithModifiedRodriguesParametersElements(
+                                keplerianElements, centralBodyGravitationalParameter );
+
+                    // Convert back to Keplerian
+                    convertedKeplerianElementsUSM6 =
+                            convertUnifiedStateModelWithModifiedRodriguesParametersToKeplerianElements(
+                                convertedUnifiedStateModelModifiedRodriguesParametersElements,
+                                centralBodyGravitationalParameter );
+
+                    // Convert to USMEM
+                    convertedUnifiedStateModelExponentialMapElements = convertKeplerianToUnifiedStateModelWithExponentialMapElements(
+                                keplerianElements, centralBodyGravitationalParameter );
+
+                    // Convert back to Keplerian
+                    convertedKeplerianElementsUSMEM = convertUnifiedStateModelWithExponentialMapToKeplerianElements(
+                                convertedUnifiedStateModelExponentialMapElements, centralBodyGravitationalParameter );
+
                     // Save to map
                     keplerianElementsInput[ loopIndex ] = keplerianElements;
-                    keplerianElementsUSMEMOutput[ loopIndex ] = convertedKeplerianElementsUSMEM;
                     keplerianElementsUSM7Output[ loopIndex ] = convertedKeplerianElementsUSM7;
-                    unifiedStateModelExponentialMapElementsOutput[ loopIndex ] = convertedUnifiedStateModelExponentialMapElements;
+                    keplerianElementsUSM6Output[ loopIndex ] = convertedKeplerianElementsUSM6;
+                    keplerianElementsUSMEMOutput[ loopIndex ] = convertedKeplerianElementsUSMEM;
                     unifiedStateModelQuaternionsElementsOutput[ loopIndex ] = convertedUnifiedStateModelQuaternionsElements;
+                    unifiedStateModelModifiedRodriguesParametersElementsOutput[ loopIndex ] = convertedUnifiedStateModelModifiedRodriguesParametersElements;
+                    unifiedStateModelExponentialMapElementsOutput[ loopIndex ] = convertedUnifiedStateModelExponentialMapElements;
 
                     // Next step
                     ++loopIndex;
@@ -203,13 +196,6 @@ int main( )
                                           std::numeric_limits< double >::digits10,
                                           "," );
 
-    input_output::writeDataMapToTextFile( keplerianElementsUSMEMOutput,
-                                          "kepler_usmem_output.dat",getOutputPath( ),
-                                          "",
-                                          std::numeric_limits< int >::digits10,
-                                          std::numeric_limits< double >::digits10,
-                                          "," );
-
     input_output::writeDataMapToTextFile( keplerianElementsUSM7Output,
                                           "kepler_usm7_output.dat",getOutputPath( ),
                                           "",
@@ -217,8 +203,15 @@ int main( )
                                           std::numeric_limits< double >::digits10,
                                           "," );
 
-    input_output::writeDataMapToTextFile( unifiedStateModelExponentialMapElementsOutput,
-                                          "usmem_output.dat",getOutputPath( ),
+    input_output::writeDataMapToTextFile( keplerianElementsUSM6Output,
+                                          "kepler_usm6_output.dat",getOutputPath( ),
+                                          "",
+                                          std::numeric_limits< int >::digits10,
+                                          std::numeric_limits< double >::digits10,
+                                          "," );
+
+    input_output::writeDataMapToTextFile( keplerianElementsUSMEMOutput,
+                                          "kepler_usmem_output.dat",getOutputPath( ),
                                           "",
                                           std::numeric_limits< int >::digits10,
                                           std::numeric_limits< double >::digits10,
@@ -226,6 +219,20 @@ int main( )
 
     input_output::writeDataMapToTextFile( unifiedStateModelQuaternionsElementsOutput,
                                           "usm7_output.dat",getOutputPath( ),
+                                          "",
+                                          std::numeric_limits< int >::digits10,
+                                          std::numeric_limits< double >::digits10,
+                                          "," );
+
+    input_output::writeDataMapToTextFile( unifiedStateModelModifiedRodriguesParametersElementsOutput,
+                                          "usm6_output.dat",getOutputPath( ),
+                                          "",
+                                          std::numeric_limits< int >::digits10,
+                                          std::numeric_limits< double >::digits10,
+                                          "," );
+
+    input_output::writeDataMapToTextFile( unifiedStateModelExponentialMapElementsOutput,
+                                          "usmem_output.dat",getOutputPath( ),
                                           "",
                                           std::numeric_limits< int >::digits10,
                                           std::numeric_limits< double >::digits10,
