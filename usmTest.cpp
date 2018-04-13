@@ -213,7 +213,10 @@ int main( )
     boost::shared_ptr< TranslationalStatePropagatorSettings< double > > propagatorSettings =
             boost::make_shared< TranslationalStatePropagatorSettings< double > >
             ( centralBodies, accelerationModelMap, bodiesToPropagate, SatelliteInitialState, simulationEndEpoch,
-              unified_state_model_quaternions ); // gauss_keplerian, unified_state_model_quaternions, unified_state_model_exponential_map
+              unified_state_model_quaternions );
+//    gauss_keplerian, unified_state_model_quaternions,
+//          unified_state_model_modified_rodrigues_parameters, unified_state_model_exponential_map
+
 //    boost::shared_ptr< TranslationalStatePropagatorSettings< double > > propagatorSettings =
 //            boost::make_shared< TranslationalStatePropagatorSettings< double > >
 //            ( centralBodies, accelerationModelMap, bodiesToPropagate, SatelliteInitialState, terminationSettings,
