@@ -8,6 +8,8 @@
  *    http://tudat.tudelft.nl/LICENSE.
  */
 
+#include <ctime>
+
 #include "Tudat/Astrodynamics/BasicAstrodynamics/physicalConstants.h"
 #include "Tudat/Astrodynamics/BasicAstrodynamics/timeConversions.h"
 #include "Tudat/Astrodynamics/BasicAstrodynamics/unitConversions.h"
@@ -88,13 +90,13 @@ int main( )
         trueAnomalyAngles.push_back( unit_conversions::convertDegreesToRadians( angle ) );
 
         // Next step
-        angle += 15.0;
+        angle += 7.5;
     }
 
     // Create Keplerian elements vector
     Eigen::Vector6d keplerianElements = Eigen::Vector6d::Zero( );
     keplerianElements( semiMajorAxisIndex ) = 1.5e11;
-    keplerianElements( eccentricityIndex ) = 0.1;
+    keplerianElements( eccentricityIndex ) = 0.25;
 
     // Standard gravitational parameter
     const double centralBodyGravitationalParameter = 1.32712440018e20; // [m^3/s^2]
@@ -102,6 +104,10 @@ int main( )
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ///////////////////////       CONVERT TO AND FROM USMEM          //////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    // Timeing
+    time_t tstart, tend;
+    tstart = time( 0 );
 
     // Create map of results
     std::map< int, Eigen::Vector6d > keplerianElementsInput;
@@ -131,13 +137,9 @@ int main( )
                 {
                     // Complete Keplerian elements vector
                     keplerianElements( inclinationIndex ) = *i;
-//                            unit_conversions::convertDegreesToRadians( 90.0 );//
                     keplerianElements( longitudeOfAscendingNodeIndex ) = *O;
-//                            unit_conversions::convertDegreesToRadians( 210.0 );//
                     keplerianElements( argumentOfPeriapsisIndex ) = *o;
-//                            unit_conversions::convertDegreesToRadians( 330.0 );//
                     keplerianElements( trueAnomalyIndex ) = *t;
-//                            unit_conversions::convertDegreesToRadians( 315.0 );//
 
                     // Check for inconsistencies
                     if ( std::abs( keplerianElements( inclinationIndex ) ) < tolerance )
@@ -148,51 +150,37 @@ int main( )
                     // Convert to USM7 and back
                     Eigen::Vector6d cartesianElements = convertKeplerianToCartesianElements(
                                 keplerianElements, centralBodyGravitationalParameter );
-                    convertedUnifiedStateModelQuaternionsElements = convertCartesianToUnifiedStateModelWithQuaternionsElements(
+                    convertedUnifiedStateModelQuaternionsElements = convertCartesianToUnifiedStateModelQuaternionsElements(
                                 cartesianElements, centralBodyGravitationalParameter );
 
-//                    // vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv    ---REMOVE---    vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
-//                    std::cout << "Kepler In: " << keplerianElements.transpose( ) << std::endl;
-//                    std::cout << "Cartesian In: " << cartesianElements.transpose( ) << std::endl;
-//                    // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^    ---REMOVE---    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-                    Eigen::Vector6d convertedCartesianElementsUSM7 = convertUnifiedStateModelWithQuaternionsToCartesianElements(
+                    Eigen::Vector6d convertedCartesianElementsUSM7 = convertUnifiedStateModelQuaternionsToCartesianElements(
                                 convertedUnifiedStateModelQuaternionsElements, centralBodyGravitationalParameter );
                     convertedKeplerianElementsUSM7 = convertCartesianToKeplerianElements(
                                 convertedCartesianElementsUSM7, centralBodyGravitationalParameter );
 
-//                    // vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv    ---REMOVE---    vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
-//                    std::cout << "Cartesian Out: " << convertedCartesianElementsUSM7.transpose( ) << std::endl;
-//                    std::cout << "Kepler Out: " << convertedKeplerianElementsUSM7.transpose( ) << std::endl;
-//                    // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^    ---REMOVE---    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
 //                    // Convert to USM7 and back
-//                    convertedUnifiedStateModelQuaternionsElements = convertKeplerianToUnifiedStateModelWithQuaternionsElements(
+//                    convertedUnifiedStateModelQuaternionsElements = convertKeplerianToUnifiedStateModelQuaternionsElements(
 //                                keplerianElements, centralBodyGravitationalParameter );
 
-//                    convertedKeplerianElementsUSM7 = convertUnifiedStateModelWithQuaternionsToKeplerianElements(
+//                    convertedKeplerianElementsUSM7 = convertUnifiedStateModelQuaternionsToKeplerianElements(
 //                                convertedUnifiedStateModelQuaternionsElements, centralBodyGravitationalParameter );
 
                     // Convert to USM6 and back
                     convertedUnifiedStateModelModifiedRodriguesParametersElements =
-                            convertKeplerianToUnifiedStateModelWithModifiedRodriguesParametersElements(
+                            convertKeplerianToUnifiedStateModelModifiedRodriguesParametersElements(
                                 keplerianElements, centralBodyGravitationalParameter );
 
                     convertedKeplerianElementsUSM6 =
-                            convertUnifiedStateModelWithModifiedRodriguesParametersToKeplerianElements(
+                            convertUnifiedStateModelModifiedRodriguesParametersToKeplerianElements(
                                 convertedUnifiedStateModelModifiedRodriguesParametersElements,
                                 centralBodyGravitationalParameter );
 
                     // Convert to USMEM and back
-                    convertedUnifiedStateModelExponentialMapElements = convertKeplerianToUnifiedStateModelWithExponentialMapElements(
+                    convertedUnifiedStateModelExponentialMapElements = convertKeplerianToUnifiedStateModelExponentialMapElements(
                                 keplerianElements, centralBodyGravitationalParameter );
 
-                    convertedKeplerianElementsUSMEM = convertUnifiedStateModelWithExponentialMapToKeplerianElements(
+                    convertedKeplerianElementsUSMEM = convertUnifiedStateModelExponentialMapToKeplerianElements(
                                 convertedUnifiedStateModelExponentialMapElements, centralBodyGravitationalParameter );
-
-//                    // vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv    ---REMOVE---    vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
-//                    std::cout << "USMEM: " << convertedUnifiedStateModelExponentialMapElements.transpose( ) << std::endl;
-//                    // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^    ---REMOVE---    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
                     // Save to map
                     keplerianElementsInput[ loopIndex ] = keplerianElements;
@@ -209,6 +197,10 @@ int main( )
             }
         }
     }
+
+    // Timing
+    tend = time( 0 );
+    std::cout << "Execution time: " << difftime( tend, tstart ) << " s" << std::endl;
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ///////////////////////       SAVE OUTPUT                        //////////////////////////////////////////////////////

@@ -8,8 +8,8 @@
  *    http://tudat.tudelft.nl/LICENSE.
  */
 
+#include <ctime>
 #include <Tudat/SimulationSetup/tudatSimulationHeader.h>
-//#include <Tudat/SimulationSetup/tudatEstimationHeader.h>
 
 //! Get path for output directory.
 static inline std::string getOutputPath(
@@ -114,7 +114,7 @@ int main( )
                 createAerodynamicCoefficientInterface( aerodynamicCoefficientSettings, "Satellite" ) );
 
     // Create radiation pressure settings
-    double referenceAreaRadiation = 20;
+    double referenceAreaRadiation = 20.0;
     double radiationPressureCoefficient = 1.25;
     std::vector< std::string > occultingBodies;
     occultingBodies.push_back( "Mars" );
@@ -213,7 +213,7 @@ int main( )
     boost::shared_ptr< TranslationalStatePropagatorSettings< double > > propagatorSettings =
             boost::make_shared< TranslationalStatePropagatorSettings< double > >
             ( centralBodies, accelerationModelMap, bodiesToPropagate, SatelliteInitialState, simulationEndEpoch,
-              unified_state_model_quaternions );
+              unified_state_model_modified_rodrigues_parameters );
 //    gauss_keplerian, unified_state_model_quaternions,
 //          unified_state_model_modified_rodrigues_parameters, unified_state_model_exponential_map
 
@@ -235,12 +235,20 @@ int main( )
     ///////////////////////             PROPAGATE ORBIT            ////////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+    // Timeing
+    time_t tstart, tend;
+    tstart = time( 0 );
+
     // Create simulation object and propagate dynamics.
     SingleArcDynamicsSimulator< > dynamicsSimulator(
                 bodyMap, integratorSettings, propagatorSettings, true, false, false );
     std::map< double, Eigen::VectorXd > cartesianIntegrationResult = dynamicsSimulator.getEquationsOfMotionNumericalSolution( );
     std::map< double, Eigen::VectorXd > keplerianIntegrationResult;
 //    std::map< double, Eigen::VectorXd > dependentVariableSolution = dynamicsSimulator.getDependentVariableHistory( );
+
+    // Timing
+    tend = time( 0 );
+    std::cout << "Execution time: " << difftime( tend, tstart ) << " s" << std::endl;
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ///////////////////////        PROVIDE OUTPUT TO CONSOLE AND FILES           //////////////////////////////////////////
