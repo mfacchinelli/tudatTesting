@@ -90,7 +90,7 @@ int main( )
         trueAnomalyAngles.push_back( unit_conversions::convertDegreesToRadians( angle ) );
 
         // Next step
-        angle += 7.5;
+        angle += 15.0;
     }
 
     // Create Keplerian elements vector
@@ -118,15 +118,26 @@ int main( )
     std::map< int, Eigen::Vector7d > unifiedStateModelModifiedRodriguesParametersElementsOutput;
     std::map< int, Eigen::Vector6d > unifiedStateModelExponentialMapElementsOutput;
 
+    // Predefine Keplerian vectors
+    Eigen::Vector6d convertedKeplerianElementsUSM7;
+    Eigen::Vector6d convertedKeplerianElementsUSM6;
+    Eigen::Vector6d convertedKeplerianElementsUSMEM;
+
+    // Predefine Cartesian vectors
+    Eigen::Vector6d cartesianElements;
+    Eigen::Vector6d convertedCartesianElementsUSM7;
+    Eigen::Vector6d convertedCartesianElementsUSM6;
+    Eigen::Vector6d convertedCartesianElementsUSMEM;
+
+    // Predefine USM vectors
+    Eigen::Vector7d convertedUnifiedStateModelQuaternionsElements;
+    Eigen::Vector7d convertedUnifiedStateModelModifiedRodriguesParametersElements;
+    Eigen::Vector6d convertedUnifiedStateModelExponentialMapElements;
+
     // Loop over angles
     int loopIndex = 1;
     double tolerance = 1e-15;
-    Eigen::Vector6d convertedKeplerianElementsUSM7 = Eigen::Vector6d::Zero( );
-    Eigen::Vector6d convertedKeplerianElementsUSM6 = Eigen::Vector6d::Zero( );
-    Eigen::Vector6d convertedKeplerianElementsUSMEM = Eigen::Vector6d::Zero( );
-    Eigen::Vector7d convertedUnifiedStateModelQuaternionsElements = Eigen::Vector7d::Zero( );
-    Eigen::Vector7d convertedUnifiedStateModelModifiedRodriguesParametersElements = Eigen::Vector7d::Zero( );
-    Eigen::Vector6d convertedUnifiedStateModelExponentialMapElements = Eigen::Vector6d::Zero( );
+    bool convertThroughCartesian = true;
     for ( std::vector< double >::const_iterator i = inclinationAngles.begin( ); i != inclinationAngles.end( ); ++i )
     {
         for ( std::vector< double >::const_iterator O = rightAscensionOfAscendingNodeAngles.begin( ); O != rightAscensionOfAscendingNodeAngles.end( ); ++O )
@@ -147,40 +158,74 @@ int main( )
                         keplerianElements( longitudeOfAscendingNodeIndex ) = 0.0;
                     }
 
-                    // Convert to USM7 and back
-                    Eigen::Vector6d cartesianElements = convertKeplerianToCartesianElements(
-                                keplerianElements, centralBodyGravitationalParameter );
-                    convertedUnifiedStateModelQuaternionsElements = convertCartesianToUnifiedStateModelQuaternionsElements(
-                                cartesianElements, centralBodyGravitationalParameter );
+                    // Convert directly to/from Keplerian or pass through Cartesian, as well
+                    if ( convertThroughCartesian )
+                    {
+                        // Get Cartesian elements
+                        cartesianElements = convertKeplerianToCartesianElements(
+                                    keplerianElements, centralBodyGravitationalParameter );
 
-                    Eigen::Vector6d convertedCartesianElementsUSM7 = convertUnifiedStateModelQuaternionsToCartesianElements(
-                                convertedUnifiedStateModelQuaternionsElements, centralBodyGravitationalParameter );
-                    convertedKeplerianElementsUSM7 = convertCartesianToKeplerianElements(
-                                convertedCartesianElementsUSM7, centralBodyGravitationalParameter );
+                        // Convert to USM7 and back
+                        convertedUnifiedStateModelQuaternionsElements = convertCartesianToUnifiedStateModelQuaternionsElements(
+                                    cartesianElements, centralBodyGravitationalParameter );
 
-//                    // Convert to USM7 and back
-//                    convertedUnifiedStateModelQuaternionsElements = convertKeplerianToUnifiedStateModelQuaternionsElements(
-//                                keplerianElements, centralBodyGravitationalParameter );
+                        convertedCartesianElementsUSM7 = convertUnifiedStateModelQuaternionsToCartesianElements(
+                                    convertedUnifiedStateModelQuaternionsElements, centralBodyGravitationalParameter );
+                        convertedKeplerianElementsUSM7 = convertCartesianToKeplerianElements(
+                                    convertedCartesianElementsUSM7, centralBodyGravitationalParameter );
 
-//                    convertedKeplerianElementsUSM7 = convertUnifiedStateModelQuaternionsToKeplerianElements(
-//                                convertedUnifiedStateModelQuaternionsElements, centralBodyGravitationalParameter );
+                        // Convert to USM6 and back
+                        convertedUnifiedStateModelModifiedRodriguesParametersElements =
+                                convertCartesianToUnifiedStateModelModifiedRodriguesParametersElements(
+                                    cartesianElements, centralBodyGravitationalParameter );
 
-                    // Convert to USM6 and back
-                    convertedUnifiedStateModelModifiedRodriguesParametersElements =
-                            convertKeplerianToUnifiedStateModelModifiedRodriguesParametersElements(
-                                keplerianElements, centralBodyGravitationalParameter );
+                        convertedCartesianElementsUSM6 =
+                                convertUnifiedStateModelModifiedRodriguesParametersToCartesianElements(
+                                    convertedUnifiedStateModelModifiedRodriguesParametersElements,
+                                    centralBodyGravitationalParameter );
+                        convertedKeplerianElementsUSM6 = convertCartesianToKeplerianElements(
+                                    convertedCartesianElementsUSM6, centralBodyGravitationalParameter );
 
-                    convertedKeplerianElementsUSM6 =
-                            convertUnifiedStateModelModifiedRodriguesParametersToKeplerianElements(
-                                convertedUnifiedStateModelModifiedRodriguesParametersElements,
-                                centralBodyGravitationalParameter );
+                        // Convert to USMEM and back
+                        convertedUnifiedStateModelExponentialMapElements =
+                                convertCartesianToUnifiedStateModelExponentialMapElements(
+                                    cartesianElements, centralBodyGravitationalParameter );
 
-                    // Convert to USMEM and back
-                    convertedUnifiedStateModelExponentialMapElements = convertKeplerianToUnifiedStateModelExponentialMapElements(
-                                keplerianElements, centralBodyGravitationalParameter );
+                        convertedCartesianElementsUSMEM =
+                                convertUnifiedStateModelExponentialMapToCartesianElements(
+                                    convertedUnifiedStateModelExponentialMapElements,
+                                    centralBodyGravitationalParameter );
+                        convertedKeplerianElementsUSMEM = convertCartesianToKeplerianElements(
+                                    convertedCartesianElementsUSMEM, centralBodyGravitationalParameter );
+                    }
+                    else
+                    {
+                        // Convert to USM7 and back
+                        convertedUnifiedStateModelQuaternionsElements =
+                                convertKeplerianToUnifiedStateModelQuaternionsElements(
+                                    keplerianElements, centralBodyGravitationalParameter );
 
-                    convertedKeplerianElementsUSMEM = convertUnifiedStateModelExponentialMapToKeplerianElements(
-                                convertedUnifiedStateModelExponentialMapElements, centralBodyGravitationalParameter );
+                        convertedKeplerianElementsUSM7 = convertUnifiedStateModelQuaternionsToKeplerianElements(
+                                    convertedUnifiedStateModelQuaternionsElements, centralBodyGravitationalParameter );
+
+                        // Convert to USM6 and back
+                        convertedUnifiedStateModelModifiedRodriguesParametersElements =
+                                convertKeplerianToUnifiedStateModelModifiedRodriguesParametersElements(
+                                    keplerianElements, centralBodyGravitationalParameter );
+
+                        convertedKeplerianElementsUSM6 =
+                                convertUnifiedStateModelModifiedRodriguesParametersToKeplerianElements(
+                                    convertedUnifiedStateModelModifiedRodriguesParametersElements,
+                                    centralBodyGravitationalParameter );
+
+                        // Convert to USMEM and back
+                        convertedUnifiedStateModelExponentialMapElements =
+                                convertKeplerianToUnifiedStateModelExponentialMapElements(
+                                    keplerianElements, centralBodyGravitationalParameter );
+
+                        convertedKeplerianElementsUSMEM = convertUnifiedStateModelExponentialMapToKeplerianElements(
+                                    convertedUnifiedStateModelExponentialMapElements, centralBodyGravitationalParameter );
+                    }
 
                     // Save to map
                     keplerianElementsInput[ loopIndex ] = keplerianElements;
