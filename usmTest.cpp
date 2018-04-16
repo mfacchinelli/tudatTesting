@@ -182,9 +182,9 @@ int main( )
             = unit_conversions::convertDegreesToRadians( 23.4 );
     SatelliteInitialStateInKeplerianElements( trueAnomalyIndex ) = unit_conversions::convertDegreesToRadians( 180.0 );
 
-    double earthGravitationalParameter = bodyMap.at( "Mars" )->getGravityFieldModel( )->getGravitationalParameter( );
+    double marsGravitationalParameter = bodyMap.at( "Mars" )->getGravityFieldModel( )->getGravitationalParameter( );
     const Eigen::Vector6d SatelliteInitialState = convertKeplerianToCartesianElements(
-                SatelliteInitialStateInKeplerianElements, earthGravitationalParameter );
+                SatelliteInitialStateInKeplerianElements, marsGravitationalParameter );
 
     // Propagation termination conditions.
 //    boost::shared_ptr< PropagationTerminationSettings > terminationSettingsTime = boost::make_shared<
@@ -213,8 +213,8 @@ int main( )
     boost::shared_ptr< TranslationalStatePropagatorSettings< double > > propagatorSettings =
             boost::make_shared< TranslationalStatePropagatorSettings< double > >
             ( centralBodies, accelerationModelMap, bodiesToPropagate, SatelliteInitialState, simulationEndEpoch,
-              unified_state_model_modified_rodrigues_parameters );
-//    gauss_keplerian, unified_state_model_quaternions,
+              unified_state_model_quaternions );
+//    gauss_keplerian, gauss_modified_equinoctial, unified_state_model_quaternions,
 //          unified_state_model_modified_rodrigues_parameters, unified_state_model_exponential_map
 
 //    boost::shared_ptr< TranslationalStatePropagatorSettings< double > > propagatorSettings =
@@ -223,32 +223,40 @@ int main( )
 //              cowell, boost::make_shared< DependentVariableSaveSettings >( dependentVariables ) );
 
     // Integrator settings
-    boost::shared_ptr< IntegratorSettings< > > integratorSettings =
-            boost::make_shared< IntegratorSettings< > >
-            ( rungeKutta4, simulationStartEpoch, 1.0 );
 //    boost::shared_ptr< IntegratorSettings< > > integratorSettings =
-//            boost::make_shared< RungeKuttaVariableStepSizeSettings< > >(
-//                rungeKuttaVariableStepSize, simulationStartEpoch, 1.0,
-//                RungeKuttaCoefficients::rungeKuttaFehlberg56, 0.005, 10.0, 1e-15, 1e-15 );
+//            boost::make_shared< IntegratorSettings< > >
+//            ( rungeKutta4, simulationStartEpoch, 1.0 );
+    boost::shared_ptr< IntegratorSettings< > > integratorSettings =
+            boost::make_shared< RungeKuttaVariableStepSizeSettings< > >(
+                rungeKuttaVariableStepSize, simulationStartEpoch, 1.0,
+                RungeKuttaCoefficients::rungeKuttaFehlberg56, 0.005, 10.0, 1e-15, 1e-15 );
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ///////////////////////             PROPAGATE ORBIT            ////////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    // Timeing
-    time_t tstart, tend;
-    tstart = time( 0 );
-
-    // Create simulation object and propagate dynamics.
-    SingleArcDynamicsSimulator< > dynamicsSimulator(
-                bodyMap, integratorSettings, propagatorSettings, true, false, false );
-    std::map< double, Eigen::VectorXd > cartesianIntegrationResult = dynamicsSimulator.getEquationsOfMotionNumericalSolution( );
+    // Preassign variables
+    std::map< double, Eigen::VectorXd > cartesianIntegrationResult;
     std::map< double, Eigen::VectorXd > keplerianIntegrationResult;
-//    std::map< double, Eigen::VectorXd > dependentVariableSolution = dynamicsSimulator.getDependentVariableHistory( );
+    std::map< double, Eigen::VectorXd > usmIntegrationResult;
+//    std::map< double, Eigen::VectorXd > dependentVariableSolution;
 
-    // Timing
-    tend = time( 0 );
-    std::cout << "Execution time: " << difftime( tend, tstart ) << " s" << std::endl;
+    for ( unsigned int i = 0; i < 1; i++ )
+    {
+        // Timeing
+        time_t startTime, endTime;
+        startTime = time( 0 );
+
+        // Create simulation object and propagate dynamics.
+        SingleArcDynamicsSimulator< > dynamicsSimulator(
+                    bodyMap, integratorSettings, propagatorSettings, true, false, false );
+        cartesianIntegrationResult = dynamicsSimulator.getEquationsOfMotionNumericalSolution( );
+        //    dependentVariableSolution = dynamicsSimulator.getDependentVariableHistory( );
+
+        // Timing
+        endTime = time( 0 );
+        std::cout << "Propagation time: " << difftime( endTime, startTime ) << " s" << std::endl;
+    }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ///////////////////////        PROVIDE OUTPUT TO CONSOLE AND FILES           //////////////////////////////////////////
@@ -269,7 +277,11 @@ int main( )
         }
 
         keplerianIntegrationResult[ stateIterator->first ] =
-                convertCartesianToKeplerianElements( currentCartesianState, earthGravitationalParameter );
+                convertCartesianToKeplerianElements( currentCartesianState, marsGravitationalParameter );
+        usmIntegrationResult[ stateIterator->first ] =
+                convertCartesianToUnifiedStateModelQuaternionsElements( currentCartesianState,
+                                                                        marsGravitationalParameter );
+        // convertCartesianToUnifiedStateModelModifiedRodriguesParametersElements
     }
 
     // Write perturbed satellite propagation history to file.
@@ -282,6 +294,13 @@ int main( )
 
     input_output::writeDataMapToTextFile( keplerianIntegrationResult,
                                           "test_orbit.dat",getOutputPath( ),
+                                          "",
+                                          std::numeric_limits< double >::digits10,
+                                          std::numeric_limits< double >::digits10,
+                                          "," );
+
+    input_output::writeDataMapToTextFile( usmIntegrationResult,
+                                          "test_usm.dat",getOutputPath( ),
                                           "",
                                           std::numeric_limits< double >::digits10,
                                           std::numeric_limits< double >::digits10,
