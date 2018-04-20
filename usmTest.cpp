@@ -69,8 +69,8 @@ int main( )
     // Set simulation time settings.
     const double simulationStartEpoch = 7.0 * tudat::physical_constants::JULIAN_YEAR +
             30.0 * 6.0 * tudat::physical_constants::JULIAN_DAY;
-    //    const double simulationEndEpoch = 10.0 + simulationStartEpoch;
-    const double simulationEndEpoch = 10.0 * tudat::physical_constants::JULIAN_DAY + simulationStartEpoch;
+//    const double simulationEndEpoch = 2.0 + simulationStartEpoch;
+    const double simulationEndEpoch = 30.0 * tudat::physical_constants::JULIAN_DAY + simulationStartEpoch;
 
     // Define body settings for simulation.
     std::vector< std::string > bodiesToCreate;
@@ -139,24 +139,31 @@ int main( )
     std::vector< std::string > centralBodies;
 
     // Define propagation settings.
+    bool keplerOrbit = false;
     std::map< std::string, std::vector< boost::shared_ptr< AccelerationSettings > > > accelerationsOfSatellite;
-    //    accelerationsOfSatellite[ "Mars" ].push_back( boost::make_shared< AccelerationSettings >(
-    //                                                      basic_astrodynamics::central_gravity ) );
-    accelerationsOfSatellite[ "Mars" ].push_back( boost::make_shared< SphericalHarmonicAccelerationSettings >( 21, 21 ) );
-
-    for( unsigned int i = 0; i < bodiesToCreate.size( ); i++ )
+    if ( keplerOrbit )
     {
-        if( i != 1 )
-        {
-            accelerationsOfSatellite[ bodiesToCreate.at( i ) ].push_back( boost::make_shared< AccelerationSettings >(
-                                                                              basic_astrodynamics::central_gravity ) );
-        }
+        accelerationsOfSatellite[ "Mars" ].push_back( boost::make_shared< AccelerationSettings >(
+                                                          basic_astrodynamics::central_gravity ) );
     }
-    accelerationsOfSatellite[ "Sun" ].push_back( boost::make_shared< AccelerationSettings >(
-                                                     basic_astrodynamics::cannon_ball_radiation_pressure ) );
+    else
+    {
+        accelerationsOfSatellite[ "Mars" ].push_back( boost::make_shared< SphericalHarmonicAccelerationSettings >( 21, 21 ) );
 
-    accelerationsOfSatellite[ "Mars" ].push_back( boost::make_shared< AccelerationSettings >(
-                                                      basic_astrodynamics::aerodynamic ) );
+        for( unsigned int i = 0; i < bodiesToCreate.size( ); i++ )
+        {
+            if( i != 1 )
+            {
+                accelerationsOfSatellite[ bodiesToCreate.at( i ) ].push_back( boost::make_shared< AccelerationSettings >(
+                                                                                  basic_astrodynamics::central_gravity ) );
+            }
+        }
+        accelerationsOfSatellite[ "Sun" ].push_back( boost::make_shared< AccelerationSettings >(
+                                                         basic_astrodynamics::cannon_ball_radiation_pressure ) );
+
+        accelerationsOfSatellite[ "Mars" ].push_back( boost::make_shared< AccelerationSettings >(
+                                                          basic_astrodynamics::aerodynamic ) );
+    }
 
     // Add acceleration information
     accelerationMap[ "Satellite" ] = accelerationsOfSatellite;
@@ -237,14 +244,14 @@ int main( )
         {
             integratorSettings = boost::make_shared< RungeKuttaVariableStepSizeSettings< > >(
                         rungeKuttaVariableStepSize, simulationStartEpoch, 0.1,
-                        RungeKuttaCoefficients::rungeKuttaFehlberg78, 0.001, 10.0, 1e-10, 1e-10 );
+                        RungeKuttaCoefficients::rungeKuttaFehlberg78, 0.001, 50.0, 1e-10, 1e-10 );
         }
         else
         {
 //            integratorSettings = boost::make_shared< IntegratorSettings< > > ( rungeKutta4, simulationStartEpoch, 10.0 );
             integratorSettings = boost::make_shared< RungeKuttaVariableStepSizeSettings< > >(
                         rungeKuttaVariableStepSize, simulationStartEpoch, 10.0,
-                        RungeKuttaCoefficients::rungeKuttaFehlberg56, 0.1, 250.0, 1e-7, 1e-7 );
+                        RungeKuttaCoefficients::rungeKuttaFehlberg56, 0.1, 150.0, 1e-7, 1e-7 );
         }
 
         ///////////////////////             PROPAGATE ORBIT            ////////////////////////////////////////////////////////
@@ -343,7 +350,7 @@ int main( )
                                               std::numeric_limits< double >::digits10,
                                               "," );
 
-        if ( propagatorType > 2 && propagatorType < 7 )
+        if ( propagatorType > 2 && propagatorType < 6 )
         {
             input_output::writeDataMapToTextFile( usmIntegrationResult,
                                                   "test_usm" + fileNameAddition + ".dat", getOutputPath( ),
