@@ -62,6 +62,9 @@ int main( )
     using namespace tudat::basic_mathematics;
     using namespace tudat::input_output;
 
+    // Select mode
+    bool fullAngleSpectrum = true;
+
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ///////////////////////       CREATE KEPLER ELEMENT STATE        //////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -90,7 +93,7 @@ int main( )
         trueAnomalyAngles.push_back( unit_conversions::convertDegreesToRadians( angle ) );
 
         // Next step
-        angle += 15.0;
+        angle += fullAngleSpectrum ? 15.0 : 360.0;
     }
 
     // Create Keplerian elements vector
@@ -104,10 +107,6 @@ int main( )
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ///////////////////////       CONVERT TO AND FROM USM            //////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-    // Timeing
-    time_t tstart, tend;
-    tstart = time( 0 );
 
     // Create map of results
     std::map< int, Eigen::Vector6d > keplerianElementsInput;
@@ -139,250 +138,278 @@ int main( )
     //      1: Kepl -> Cart -> USM -> Cart -> Kepl
     //      2: Kepl -> Cart -> USM -> Kepl
     //      3: Kepl -> USM -> Cart -> Kepl
-    int conversionMode = 2;
+    bool fullConversionAnalysis = true;
+    int conversionModeInitial = fullConversionAnalysis ? 0 : 0;
+    int conversionModeFinal = fullConversionAnalysis ? 4 : ( conversionModeInitial + 1 );
 
-    // Loop over angles
-    int loopIndex = 1;
-    double tolerance = 1e-15;
-    for ( std::vector< double >::const_iterator i = inclinationAngles.begin( ); i != inclinationAngles.end( ); ++i )
+    // Start loop
+    for ( int conversionMode = conversionModeInitial; conversionMode < conversionModeFinal; conversionMode++ )
     {
-        for ( std::vector< double >::const_iterator O = rightAscensionOfAscendingNodeAngles.begin( ); O != rightAscensionOfAscendingNodeAngles.end( ); ++O )
+        // Print mode
+        std::cout << "Mode: " << conversionMode << std::endl;
+
+        // Timeing
+        time_t tstart, tend;
+        tstart = time( 0 );
+
+        // Loop over angles
+        int loopIndex = 1;
+        double tolerance = 1e-15;
+        for ( std::vector< double >::const_iterator i = inclinationAngles.begin( ); i != inclinationAngles.end( ); ++i )
         {
-            for ( std::vector< double >::const_iterator o = argumentOfPeriapsisAngles.begin( ); o != argumentOfPeriapsisAngles.end( ); ++o )
+            for ( std::vector< double >::const_iterator O = rightAscensionOfAscendingNodeAngles.begin( ); O != rightAscensionOfAscendingNodeAngles.end( ); ++O )
             {
-                for ( std::vector< double >::const_iterator t = trueAnomalyAngles.begin( ); t != trueAnomalyAngles.end( ); ++t )
+                for ( std::vector< double >::const_iterator o = argumentOfPeriapsisAngles.begin( ); o != argumentOfPeriapsisAngles.end( ); ++o )
                 {
-                    // Complete Keplerian elements vector
-                    keplerianElements( inclinationIndex ) = *i;
-                    keplerianElements( longitudeOfAscendingNodeIndex ) = *O;
-                    keplerianElements( argumentOfPeriapsisIndex ) = *o;
-                    keplerianElements( trueAnomalyIndex ) = *t;
-
-                    // Check for inconsistencies
-                    if ( std::abs( keplerianElements( inclinationIndex ) ) < tolerance )
+                    for ( std::vector< double >::const_iterator t = trueAnomalyAngles.begin( ); t != trueAnomalyAngles.end( ); ++t )
                     {
-                        keplerianElements( longitudeOfAscendingNodeIndex ) = 0.0;
+                        // Complete Keplerian elements vector
+                        if ( fullAngleSpectrum )
+                        {
+                            keplerianElements( inclinationIndex ) = *i;
+                            keplerianElements( longitudeOfAscendingNodeIndex ) = *O;
+                            keplerianElements( argumentOfPeriapsisIndex ) = *o;
+                            keplerianElements( trueAnomalyIndex ) = *t;
+                        }
+                        else
+                        {
+                            keplerianElements( inclinationIndex ) =
+                                    unit_conversions::convertDegreesToRadians< double >( 0 );
+                            keplerianElements( longitudeOfAscendingNodeIndex ) =
+                                    unit_conversions::convertDegreesToRadians< double >( 0 );
+                            keplerianElements( argumentOfPeriapsisIndex ) =
+                                    unit_conversions::convertDegreesToRadians< double >( 0 );
+                            keplerianElements( trueAnomalyIndex ) =
+                                    unit_conversions::convertDegreesToRadians< double >( 105 );
+                            std::cout << "Kepler In: " << keplerianElements.transpose( ) << std::endl;
+                        }
+
+                        // Check for inconsistencies
+                        if ( std::abs( keplerianElements( inclinationIndex ) ) < tolerance )
+                        {
+                            keplerianElements( longitudeOfAscendingNodeIndex ) = 0.0;
+                        }
+
+                        // Convert directly to/from Keplerian or pass through Cartesian, as well
+                        switch ( conversionMode )
+                        {
+                        case 0:
+                        {
+                            // Convert to USM7 and back
+                            convertedUnifiedStateModelQuaternionsElements =
+                                    convertKeplerianToUnifiedStateModelQuaternionsElements(
+                                        keplerianElements, centralBodyGravitationalParameter );
+
+                            convertedKeplerianElementsUSM7 = convertUnifiedStateModelQuaternionsToKeplerianElements(
+                                        convertedUnifiedStateModelQuaternionsElements, centralBodyGravitationalParameter );
+
+                            // Convert to USM6 and back
+                            convertedUnifiedStateModelModifiedRodriguesParametersElements =
+                                    convertKeplerianToUnifiedStateModelModifiedRodriguesParametersElements(
+                                        keplerianElements, centralBodyGravitationalParameter );
+
+                            convertedKeplerianElementsUSM6 =
+                                    convertUnifiedStateModelModifiedRodriguesParametersToKeplerianElements(
+                                        convertedUnifiedStateModelModifiedRodriguesParametersElements,
+                                        centralBodyGravitationalParameter );
+
+                            // Convert to USMEM and back
+                            convertedUnifiedStateModelExponentialMapElements =
+                                    convertKeplerianToUnifiedStateModelExponentialMapElements(
+                                        keplerianElements, centralBodyGravitationalParameter );
+
+                            convertedKeplerianElementsUSMEM = convertUnifiedStateModelExponentialMapToKeplerianElements(
+                                        convertedUnifiedStateModelExponentialMapElements, centralBodyGravitationalParameter );
+                            break;
+                        }
+                        case 1:
+                        {
+                            // Get Cartesian elements
+                            cartesianElements = convertKeplerianToCartesianElements(
+                                        keplerianElements, centralBodyGravitationalParameter );
+
+                            // Convert to USM7 and back
+                            convertedUnifiedStateModelQuaternionsElements = convertCartesianToUnifiedStateModelQuaternionsElements(
+                                        cartesianElements, centralBodyGravitationalParameter );
+
+                            convertedCartesianElementsUSM7 = convertUnifiedStateModelQuaternionsToCartesianElements(
+                                        convertedUnifiedStateModelQuaternionsElements, centralBodyGravitationalParameter );
+                            convertedKeplerianElementsUSM7 = convertCartesianToKeplerianElements(
+                                        convertedCartesianElementsUSM7, centralBodyGravitationalParameter );
+
+                            // Convert to USM6 and back
+                            convertedUnifiedStateModelModifiedRodriguesParametersElements =
+                                    convertCartesianToUnifiedStateModelModifiedRodriguesParametersElements(
+                                        cartesianElements, centralBodyGravitationalParameter );
+
+                            convertedCartesianElementsUSM6 =
+                                    convertUnifiedStateModelModifiedRodriguesParametersToCartesianElements(
+                                        convertedUnifiedStateModelModifiedRodriguesParametersElements,
+                                        centralBodyGravitationalParameter );
+                            convertedKeplerianElementsUSM6 = convertCartesianToKeplerianElements(
+                                        convertedCartesianElementsUSM6, centralBodyGravitationalParameter );
+
+                            // Convert to USMEM and back
+                            convertedUnifiedStateModelExponentialMapElements =
+                                    convertCartesianToUnifiedStateModelExponentialMapElements(
+                                        cartesianElements, centralBodyGravitationalParameter );
+
+                            convertedCartesianElementsUSMEM =
+                                    convertUnifiedStateModelExponentialMapToCartesianElements(
+                                        convertedUnifiedStateModelExponentialMapElements,
+                                        centralBodyGravitationalParameter );
+                            convertedKeplerianElementsUSMEM = convertCartesianToKeplerianElements(
+                                        convertedCartesianElementsUSMEM, centralBodyGravitationalParameter );
+                            break;
+                        }
+                        case 2:
+                        {
+                            // Get Cartesian elements
+                            cartesianElements = convertKeplerianToCartesianElements(
+                                        keplerianElements, centralBodyGravitationalParameter );
+
+                            // Convert to USM7 and back
+                            convertedUnifiedStateModelQuaternionsElements = convertCartesianToUnifiedStateModelQuaternionsElements(
+                                        cartesianElements, centralBodyGravitationalParameter );
+
+                            convertedKeplerianElementsUSM7 = convertUnifiedStateModelQuaternionsToKeplerianElements(
+                                        convertedUnifiedStateModelQuaternionsElements, centralBodyGravitationalParameter );
+
+                            // Convert to USM6 and back
+                            convertedUnifiedStateModelModifiedRodriguesParametersElements =
+                                    convertCartesianToUnifiedStateModelModifiedRodriguesParametersElements(
+                                        cartesianElements, centralBodyGravitationalParameter );
+
+                            convertedKeplerianElementsUSM6 =
+                                    convertUnifiedStateModelModifiedRodriguesParametersToKeplerianElements(
+                                        convertedUnifiedStateModelModifiedRodriguesParametersElements,
+                                        centralBodyGravitationalParameter );
+
+                            // Convert to USMEM and back
+                            convertedUnifiedStateModelExponentialMapElements =
+                                    convertCartesianToUnifiedStateModelExponentialMapElements(
+                                        cartesianElements, centralBodyGravitationalParameter );
+
+                            convertedKeplerianElementsUSMEM =
+                                    convertUnifiedStateModelExponentialMapToKeplerianElements(
+                                        convertedUnifiedStateModelExponentialMapElements,
+                                        centralBodyGravitationalParameter );
+                            break;
+                        }
+                        case 3:
+                        {
+                            // Convert to USM7 and back
+                            convertedUnifiedStateModelQuaternionsElements = convertKeplerianToUnifiedStateModelQuaternionsElements(
+                                        keplerianElements, centralBodyGravitationalParameter );
+
+                            convertedCartesianElementsUSM7 = convertUnifiedStateModelQuaternionsToCartesianElements(
+                                        convertedUnifiedStateModelQuaternionsElements, centralBodyGravitationalParameter );
+                            convertedKeplerianElementsUSM7 = convertCartesianToKeplerianElements(
+                                        convertedCartesianElementsUSM7, centralBodyGravitationalParameter );
+
+                            // Convert to USM6 and back
+                            convertedUnifiedStateModelModifiedRodriguesParametersElements =
+                                    convertKeplerianToUnifiedStateModelModifiedRodriguesParametersElements(
+                                        keplerianElements, centralBodyGravitationalParameter );
+
+                            convertedCartesianElementsUSM6 =
+                                    convertUnifiedStateModelModifiedRodriguesParametersToCartesianElements(
+                                        convertedUnifiedStateModelModifiedRodriguesParametersElements,
+                                        centralBodyGravitationalParameter );
+                            convertedKeplerianElementsUSM6 = convertCartesianToKeplerianElements(
+                                        convertedCartesianElementsUSM6, centralBodyGravitationalParameter );
+
+                            // Convert to USMEM and back
+                            convertedUnifiedStateModelExponentialMapElements =
+                                    convertKeplerianToUnifiedStateModelExponentialMapElements(
+                                        keplerianElements, centralBodyGravitationalParameter );
+
+                            convertedCartesianElementsUSMEM =
+                                    convertUnifiedStateModelExponentialMapToCartesianElements(
+                                        convertedUnifiedStateModelExponentialMapElements,
+                                        centralBodyGravitationalParameter );
+                            convertedKeplerianElementsUSMEM = convertCartesianToKeplerianElements(
+                                        convertedCartesianElementsUSMEM, centralBodyGravitationalParameter );
+                            break;
+                        }
+                        default:
+                            throw std::runtime_error( "Conversion mode not recognized." );
+                        }
+
+                        // Save to map
+                        keplerianElementsInput[ loopIndex ] = keplerianElements;
+                        keplerianElementsUSM7Output[ loopIndex ] = convertedKeplerianElementsUSM7;
+                        keplerianElementsUSM6Output[ loopIndex ] = convertedKeplerianElementsUSM6;
+                        keplerianElementsUSMEMOutput[ loopIndex ] = convertedKeplerianElementsUSMEM;
+                        unifiedStateModelQuaternionsElementsOutput[ loopIndex ] = convertedUnifiedStateModelQuaternionsElements;
+                        unifiedStateModelModifiedRodriguesParametersElementsOutput[ loopIndex ] = convertedUnifiedStateModelModifiedRodriguesParametersElements;
+                        unifiedStateModelExponentialMapElementsOutput[ loopIndex ] = convertedUnifiedStateModelExponentialMapElements;
+
+                        // Next step
+                        ++loopIndex;
                     }
-
-                    // Convert directly to/from Keplerian or pass through Cartesian, as well
-                    switch ( conversionMode )
-                    {
-                    case 0:
-                    {
-                        // Convert to USM7 and back
-                        convertedUnifiedStateModelQuaternionsElements =
-                                convertKeplerianToUnifiedStateModelQuaternionsElements(
-                                    keplerianElements, centralBodyGravitationalParameter );
-
-                        convertedKeplerianElementsUSM7 = convertUnifiedStateModelQuaternionsToKeplerianElements(
-                                    convertedUnifiedStateModelQuaternionsElements, centralBodyGravitationalParameter );
-
-                        // Convert to USM6 and back
-                        convertedUnifiedStateModelModifiedRodriguesParametersElements =
-                                convertKeplerianToUnifiedStateModelModifiedRodriguesParametersElements(
-                                    keplerianElements, centralBodyGravitationalParameter );
-
-                        convertedKeplerianElementsUSM6 =
-                                convertUnifiedStateModelModifiedRodriguesParametersToKeplerianElements(
-                                    convertedUnifiedStateModelModifiedRodriguesParametersElements,
-                                    centralBodyGravitationalParameter );
-
-                        // Convert to USMEM and back
-                        convertedUnifiedStateModelExponentialMapElements =
-                                convertKeplerianToUnifiedStateModelExponentialMapElements(
-                                    keplerianElements, centralBodyGravitationalParameter );
-
-                        convertedKeplerianElementsUSMEM = convertUnifiedStateModelExponentialMapToKeplerianElements(
-                                    convertedUnifiedStateModelExponentialMapElements, centralBodyGravitationalParameter );
-                        break;
-                    }
-                    case 1:
-                    {
-                        // Get Cartesian elements
-                        cartesianElements = convertKeplerianToCartesianElements(
-                                    keplerianElements, centralBodyGravitationalParameter );
-
-                        // Convert to USM7 and back
-                        convertedUnifiedStateModelQuaternionsElements = convertCartesianToUnifiedStateModelQuaternionsElements(
-                                    cartesianElements, centralBodyGravitationalParameter );
-
-                        convertedCartesianElementsUSM7 = convertUnifiedStateModelQuaternionsToCartesianElements(
-                                    convertedUnifiedStateModelQuaternionsElements, centralBodyGravitationalParameter );
-                        convertedKeplerianElementsUSM7 = convertCartesianToKeplerianElements(
-                                    convertedCartesianElementsUSM7, centralBodyGravitationalParameter );
-
-                        // Convert to USM6 and back
-                        convertedUnifiedStateModelModifiedRodriguesParametersElements =
-                                convertCartesianToUnifiedStateModelModifiedRodriguesParametersElements(
-                                    cartesianElements, centralBodyGravitationalParameter );
-
-                        convertedCartesianElementsUSM6 =
-                                convertUnifiedStateModelModifiedRodriguesParametersToCartesianElements(
-                                    convertedUnifiedStateModelModifiedRodriguesParametersElements,
-                                    centralBodyGravitationalParameter );
-                        convertedKeplerianElementsUSM6 = convertCartesianToKeplerianElements(
-                                    convertedCartesianElementsUSM6, centralBodyGravitationalParameter );
-
-                        // Convert to USMEM and back
-                        convertedUnifiedStateModelExponentialMapElements =
-                                convertCartesianToUnifiedStateModelExponentialMapElements(
-                                    cartesianElements, centralBodyGravitationalParameter );
-
-                        convertedCartesianElementsUSMEM =
-                                convertUnifiedStateModelExponentialMapToCartesianElements(
-                                    convertedUnifiedStateModelExponentialMapElements,
-                                    centralBodyGravitationalParameter );
-                        convertedKeplerianElementsUSMEM = convertCartesianToKeplerianElements(
-                                    convertedCartesianElementsUSMEM, centralBodyGravitationalParameter );
-                        break;
-                    }
-                    case 2:
-                    {
-                        // Get Cartesian elements
-                        cartesianElements = convertKeplerianToCartesianElements(
-                                    keplerianElements, centralBodyGravitationalParameter );
-
-                        // Convert to USM7 and back
-                        convertedUnifiedStateModelQuaternionsElements = convertCartesianToUnifiedStateModelQuaternionsElements(
-                                    cartesianElements, centralBodyGravitationalParameter );
-
-                        convertedKeplerianElementsUSM7 = convertUnifiedStateModelQuaternionsToKeplerianElements(
-                                    convertedUnifiedStateModelQuaternionsElements, centralBodyGravitationalParameter );
-
-                        // Convert to USM6 and back
-                        convertedUnifiedStateModelModifiedRodriguesParametersElements =
-                                convertCartesianToUnifiedStateModelModifiedRodriguesParametersElements(
-                                    cartesianElements, centralBodyGravitationalParameter );
-
-                        convertedKeplerianElementsUSM6 =
-                                convertUnifiedStateModelModifiedRodriguesParametersToKeplerianElements(
-                                    convertedUnifiedStateModelModifiedRodriguesParametersElements,
-                                    centralBodyGravitationalParameter );
-
-                        // Convert to USMEM and back
-                        convertedUnifiedStateModelExponentialMapElements =
-                                convertCartesianToUnifiedStateModelExponentialMapElements(
-                                    cartesianElements, centralBodyGravitationalParameter );
-
-                        convertedKeplerianElementsUSMEM =
-                                convertUnifiedStateModelExponentialMapToKeplerianElements(
-                                    convertedUnifiedStateModelExponentialMapElements,
-                                    centralBodyGravitationalParameter );
-                        break;
-                    }
-                    case 3:
-                    {
-                        // Convert to USM7 and back
-                        convertedUnifiedStateModelQuaternionsElements = convertKeplerianToUnifiedStateModelQuaternionsElements(
-                                    keplerianElements, centralBodyGravitationalParameter );
-
-                        convertedCartesianElementsUSM7 = convertUnifiedStateModelQuaternionsToCartesianElements(
-                                    convertedUnifiedStateModelQuaternionsElements, centralBodyGravitationalParameter );
-                        convertedKeplerianElementsUSM7 = convertCartesianToKeplerianElements(
-                                    convertedCartesianElementsUSM7, centralBodyGravitationalParameter );
-
-                        // Convert to USM6 and back
-                        convertedUnifiedStateModelModifiedRodriguesParametersElements =
-                                convertKeplerianToUnifiedStateModelModifiedRodriguesParametersElements(
-                                    keplerianElements, centralBodyGravitationalParameter );
-
-                        convertedCartesianElementsUSM6 =
-                                convertUnifiedStateModelModifiedRodriguesParametersToCartesianElements(
-                                    convertedUnifiedStateModelModifiedRodriguesParametersElements,
-                                    centralBodyGravitationalParameter );
-                        convertedKeplerianElementsUSM6 = convertCartesianToKeplerianElements(
-                                    convertedCartesianElementsUSM6, centralBodyGravitationalParameter );
-
-                        // Convert to USMEM and back
-                        convertedUnifiedStateModelExponentialMapElements =
-                                convertKeplerianToUnifiedStateModelExponentialMapElements(
-                                    keplerianElements, centralBodyGravitationalParameter );
-
-                        convertedCartesianElementsUSMEM =
-                                convertUnifiedStateModelExponentialMapToCartesianElements(
-                                    convertedUnifiedStateModelExponentialMapElements,
-                                    centralBodyGravitationalParameter );
-                        convertedKeplerianElementsUSMEM = convertCartesianToKeplerianElements(
-                                    convertedCartesianElementsUSMEM, centralBodyGravitationalParameter );
-                        break;
-                    }
-                    default:
-                        throw std::runtime_error( "Conversion mode not recognized." );
-                    }
-
-                    // Save to map
-                    keplerianElementsInput[ loopIndex ] = keplerianElements;
-                    keplerianElementsUSM7Output[ loopIndex ] = convertedKeplerianElementsUSM7;
-                    keplerianElementsUSM6Output[ loopIndex ] = convertedKeplerianElementsUSM6;
-                    keplerianElementsUSMEMOutput[ loopIndex ] = convertedKeplerianElementsUSMEM;
-                    unifiedStateModelQuaternionsElementsOutput[ loopIndex ] = convertedUnifiedStateModelQuaternionsElements;
-                    unifiedStateModelModifiedRodriguesParametersElementsOutput[ loopIndex ] = convertedUnifiedStateModelModifiedRodriguesParametersElements;
-                    unifiedStateModelExponentialMapElementsOutput[ loopIndex ] = convertedUnifiedStateModelExponentialMapElements;
-
-                    // Next step
-                    ++loopIndex;
                 }
             }
         }
+
+        // Timing
+        tend = time( 0 );
+        std::cout << "Conversion time: " << difftime( tend, tstart ) << " s" << std::endl;
+
+        ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        ///////////////////////       SAVE OUTPUT                        //////////////////////////////////////////////////////
+        ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+        // Write perturbed satellite propagation history to file.
+        input_output::writeDataMapToTextFile( keplerianElementsInput,
+                                              "kepler_input_" + std::to_string( conversionMode ) + ".dat",getOutputPath( ),
+                                              "",
+                                              std::numeric_limits< int >::digits10,
+                                              std::numeric_limits< double >::digits10,
+                                              "," );
+
+        input_output::writeDataMapToTextFile( keplerianElementsUSM7Output,
+                                              "kepler_usm7_output_" + std::to_string( conversionMode ) + ".dat",getOutputPath( ),
+                                              "",
+                                              std::numeric_limits< int >::digits10,
+                                              std::numeric_limits< double >::digits10,
+                                              "," );
+
+        input_output::writeDataMapToTextFile( keplerianElementsUSM6Output,
+                                              "kepler_usm6_output_" + std::to_string( conversionMode ) + ".dat",getOutputPath( ),
+                                              "",
+                                              std::numeric_limits< int >::digits10,
+                                              std::numeric_limits< double >::digits10,
+                                              "," );
+
+        input_output::writeDataMapToTextFile( keplerianElementsUSMEMOutput,
+                                              "kepler_usmem_output_" + std::to_string( conversionMode ) + ".dat",getOutputPath( ),
+                                              "",
+                                              std::numeric_limits< int >::digits10,
+                                              std::numeric_limits< double >::digits10,
+                                              "," );
+
+        input_output::writeDataMapToTextFile( unifiedStateModelQuaternionsElementsOutput,
+                                              "usm7_output_" + std::to_string( conversionMode ) + ".dat",getOutputPath( ),
+                                              "",
+                                              std::numeric_limits< int >::digits10,
+                                              std::numeric_limits< double >::digits10,
+                                              "," );
+
+        input_output::writeDataMapToTextFile( unifiedStateModelModifiedRodriguesParametersElementsOutput,
+                                              "usm6_output_" + std::to_string( conversionMode ) + ".dat",getOutputPath( ),
+                                              "",
+                                              std::numeric_limits< int >::digits10,
+                                              std::numeric_limits< double >::digits10,
+                                              "," );
+
+        input_output::writeDataMapToTextFile( unifiedStateModelExponentialMapElementsOutput,
+                                              "usmem_output_" + std::to_string( conversionMode ) + ".dat",getOutputPath( ),
+                                              "",
+                                              std::numeric_limits< int >::digits10,
+                                              std::numeric_limits< double >::digits10,
+                                              "," );
     }
-
-    // Timing
-    tend = time( 0 );
-    std::cout << "Conversion time: " << difftime( tend, tstart ) << " s" << std::endl;
-
-    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    ///////////////////////       SAVE OUTPUT                        //////////////////////////////////////////////////////
-    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-    // Write perturbed satellite propagation history to file.
-    input_output::writeDataMapToTextFile( keplerianElementsInput,
-                                          "kepler_input.dat",getOutputPath( ),
-                                          "",
-                                          std::numeric_limits< int >::digits10,
-                                          std::numeric_limits< double >::digits10,
-                                          "," );
-
-    input_output::writeDataMapToTextFile( keplerianElementsUSM7Output,
-                                          "kepler_usm7_output.dat",getOutputPath( ),
-                                          "",
-                                          std::numeric_limits< int >::digits10,
-                                          std::numeric_limits< double >::digits10,
-                                          "," );
-
-    input_output::writeDataMapToTextFile( keplerianElementsUSM6Output,
-                                          "kepler_usm6_output.dat",getOutputPath( ),
-                                          "",
-                                          std::numeric_limits< int >::digits10,
-                                          std::numeric_limits< double >::digits10,
-                                          "," );
-
-    input_output::writeDataMapToTextFile( keplerianElementsUSMEMOutput,
-                                          "kepler_usmem_output.dat",getOutputPath( ),
-                                          "",
-                                          std::numeric_limits< int >::digits10,
-                                          std::numeric_limits< double >::digits10,
-                                          "," );
-
-    input_output::writeDataMapToTextFile( unifiedStateModelQuaternionsElementsOutput,
-                                          "usm7_output.dat",getOutputPath( ),
-                                          "",
-                                          std::numeric_limits< int >::digits10,
-                                          std::numeric_limits< double >::digits10,
-                                          "," );
-
-    input_output::writeDataMapToTextFile( unifiedStateModelModifiedRodriguesParametersElementsOutput,
-                                          "usm6_output.dat",getOutputPath( ),
-                                          "",
-                                          std::numeric_limits< int >::digits10,
-                                          std::numeric_limits< double >::digits10,
-                                          "," );
-
-    input_output::writeDataMapToTextFile( unifiedStateModelExponentialMapElementsOutput,
-                                          "usmem_output.dat",getOutputPath( ),
-                                          "",
-                                          std::numeric_limits< int >::digits10,
-                                          std::numeric_limits< double >::digits10,
-                                          "," );
 
     // Final statement.
     return EXIT_SUCCESS;
