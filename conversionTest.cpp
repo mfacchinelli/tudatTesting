@@ -139,11 +139,11 @@ int main( )
     //      2: Kepl -> Cart -> USM -> Kepl
     //      3: Kepl -> USM -> Cart -> Kepl
     bool fullConversionAnalysis = true;
-    int conversionModeInitial = fullConversionAnalysis ? 0 : 0;
-    int conversionModeFinal = fullConversionAnalysis ? 4 : ( conversionModeInitial + 1 );
+    int conversionInitialValue = fullConversionAnalysis ? 0 : 2;
+    int conversionFinalValue = fullConversionAnalysis ? 4 : ( conversionInitialValue + 1 );
 
     // Start loop
-    for ( int conversionMode = conversionModeInitial; conversionMode < conversionModeFinal; conversionMode++ )
+    for ( int conversionMode = conversionInitialValue; conversionMode < conversionFinalValue; conversionMode++ )
     {
         // Print mode
         std::cout << "Mode: " << conversionMode << std::endl;
@@ -155,32 +155,32 @@ int main( )
         // Loop over angles
         int loopIndex = 1;
         double tolerance = 1e-15;
-        for ( std::vector< double >::const_iterator i = inclinationAngles.begin( ); i != inclinationAngles.end( ); ++i )
+        for ( double i : inclinationAngles )
         {
-            for ( std::vector< double >::const_iterator O = rightAscensionOfAscendingNodeAngles.begin( ); O != rightAscensionOfAscendingNodeAngles.end( ); ++O )
+            for ( double O : rightAscensionOfAscendingNodeAngles )
             {
-                for ( std::vector< double >::const_iterator o = argumentOfPeriapsisAngles.begin( ); o != argumentOfPeriapsisAngles.end( ); ++o )
+                for ( double o : argumentOfPeriapsisAngles )
                 {
-                    for ( std::vector< double >::const_iterator t = trueAnomalyAngles.begin( ); t != trueAnomalyAngles.end( ); ++t )
+                    for ( double t : trueAnomalyAngles )
                     {
                         // Complete Keplerian elements vector
                         if ( fullAngleSpectrum )
                         {
-                            keplerianElements( inclinationIndex ) = *i;
-                            keplerianElements( longitudeOfAscendingNodeIndex ) = *O;
-                            keplerianElements( argumentOfPeriapsisIndex ) = *o;
-                            keplerianElements( trueAnomalyIndex ) = *t;
+                            keplerianElements( inclinationIndex ) = i;
+                            keplerianElements( longitudeOfAscendingNodeIndex ) = O;
+                            keplerianElements( argumentOfPeriapsisIndex ) = o;
+                            keplerianElements( trueAnomalyIndex ) = t;
                         }
                         else
                         {
                             keplerianElements( inclinationIndex ) =
-                                    unit_conversions::convertDegreesToRadians< double >( 0 );
+                                    unit_conversions::convertDegreesToRadians< double >( 179.9427042204868 );
                             keplerianElements( longitudeOfAscendingNodeIndex ) =
                                     unit_conversions::convertDegreesToRadians< double >( 0 );
                             keplerianElements( argumentOfPeriapsisIndex ) =
-                                    unit_conversions::convertDegreesToRadians< double >( 0 );
+                                    unit_conversions::convertDegreesToRadians< double >( 30 );
                             keplerianElements( trueAnomalyIndex ) =
-                                    unit_conversions::convertDegreesToRadians< double >( 105 );
+                                    unit_conversions::convertDegreesToRadians< double >( 60 );
                             std::cout << "Kepler In: " << keplerianElements.transpose( ) << std::endl;
                         }
 
