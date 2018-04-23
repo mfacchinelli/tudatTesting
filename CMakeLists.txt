@@ -207,7 +207,6 @@ if(USE_NRLMSISE00)
   list(APPEND TUDAT_APPLICATION_EXTERNAL_LIBRARIES nrlmsise00)
 endif()
 
-
 list(APPEND TUDAT_APPLICATION_PROPAGATION_LIBRARIES tudat_simulation_setup tudat_ground_stations tudat_propagators
     tudat_aerodynamics tudat_system_models tudat_geometric_shapes tudat_relativity tudat_gravitation tudat_mission_segments
     tudat_electro_magnetism tudat_propulsion tudat_ephemerides ${TUDAT_APPLICATION_ITRS_LIBRARIES} tudat_numerical_integrators tudat_reference_frames
@@ -235,3 +234,8 @@ target_link_libraries(application_marsTest ${TUDAT_APPLICATION_PROPAGATION_LIBRA
 add_executable(application_conversionTest "${SRCROOT}/conversionTest.cpp")
 setup_executable_target(application_conversionTest "${SRCROOT}")
 target_link_libraries(application_conversionTest ${TUDAT_APPLICATION_PROPAGATION_LIBRARIES} ${Boost_LIBRARIES} )
+
+# Add propagators comparison
+add_executable(application_propagatorsComparison "${SRCROOT}/propagatorsComparison.cpp")
+setup_executable_target(application_propagatorsComparison "${SRCROOT}")
+target_link_libraries(application_propagatorsComparison ${TUDAT_APPLICATION_PROPAGATION_LIBRARIES} ${Boost_LIBRARIES} )
