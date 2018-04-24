@@ -21,7 +21,7 @@ static inline std::string getOutputPath(
 
     // Strip filename from temporary string and return root-path string.
     std::string reducedPath = filePath_.substr( 0, filePath_.length( ) -
-                                                std::string( "usmTest.cpp" ).length( ) );
+                                                std::string( "propagatorsComparison.cpp" ).length( ) );
     std::string outputPath = reducedPath + "SimulationOutput/";
     if ( extraDirectory != "" )
     {
@@ -62,25 +62,23 @@ int main( )
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     // Predefine variables
-    const double simulationStartEpoch;
-    const double simulationEndEpoch;
-    std::vector< std::string > bodiesToCreate;
+    double simulationDuration = 0.0;
+    double constantTimeStep;
     Eigen::Vector6d SatelliteInitialStateInKeplerianElements;
-    std::map< std::string, std::vector< boost::shared_ptr< AccelerationSettings > > > accelerationsOfSatellite;
 
     // Select case
     //      0: Single aerobraking sweep
     //      1: Circular orbit at MMO (Mid Mars Orbit)
     //      2: Interplanetary trajectory
     int testCase = 0;
+    std::vector< string > pathAdditionTestCase = { "aero", "circ", "inter" };
     switch ( testCase )
     {
     case 0:
     {
         // Set simulation time settings.
-        simulationStartEpoch = 7.0 * tudat::physical_constants::JULIAN_YEAR +
-                30.0 * 6.0 * tudat::physical_constants::JULIAN_DAY;
-        simulationEndEpoch = 1.5 * tudat::physical_constants::JULIAN_DAY + simulationStartEpoch;
+        simulationDuration = 0.85 * tudat::physical_constants::JULIAN_DAY;
+        constantTimeStep = 15.0;
 
         // Initial conditions
         SatelliteInitialStateInKeplerianElements( semiMajorAxisIndex ) = 27227500;
@@ -93,39 +91,13 @@ int main( )
                 = unit_conversions::convertDegreesToRadians( 23.4 );
         SatelliteInitialStateInKeplerianElements( trueAnomalyIndex ) =
                 unit_conversions::convertDegreesToRadians( 180.0 );
-
-        // Define body settings for simulation.
-        bodiesToCreate.push_back( "Sun" );
-        bodiesToCreate.push_back( "Mars" );
-        bodiesToCreate.push_back( "Earth" );
-
-        // Add Martian atmosphere
-        bodySettings[ "Mars" ]->gravityFieldSettings = boost::make_shared< FromFileSphericalHarmonicsGravityFieldSettings >( jgmro120d );
-        string atmosphereFile = input_output::getTudatRootPath( ) + "/External/AtmosphereTables/MCDMeanAtmosphere.dat";
-        bodySettings[ "Mars" ]->atmosphereSettings = boost::make_shared< TabulatedAtmosphereSettings >( atmosphereFile );
-
-        // Accelerations
-        accelerationsOfSatellite[ "Mars" ].push_back( boost::make_shared< SphericalHarmonicAccelerationSettings >( 21, 21 ) );
-        for( unsigned int i = 0; i < bodiesToCreate.size( ); i++ )
-        {
-            if ( i != 1 )
-            {
-                accelerationsOfSatellite[ bodiesToCreate.at( i ) ].push_back( boost::make_shared< AccelerationSettings >(
-                                                                                  basic_astrodynamics::central_gravity ) );
-            }
-        }
-        accelerationsOfSatellite[ "Sun" ].push_back( boost::make_shared< AccelerationSettings >(
-                                                         basic_astrodynamics::cannon_ball_radiation_pressure ) );
-        accelerationsOfSatellite[ "Mars" ].push_back( boost::make_shared< AccelerationSettings >(
-                                                          basic_astrodynamics::aerodynamic ) );
         break;
     }
     case 1:
     {
         // Set simulation time settings.
-        simulationStartEpoch = 7.0 * tudat::physical_constants::JULIAN_YEAR +
-                30.0 * 6.0 * tudat::physical_constants::JULIAN_DAY;
-        simulationEndEpoch = 10.0 * tudat::physical_constants::JULIAN_DAY + simulationStartEpoch;
+        simulationDuration = 10.0 * tudat::physical_constants::JULIAN_DAY;
+        constantTimeStep = 150.0;
 
         // Initial conditions
         SatelliteInitialStateInKeplerianElements( semiMajorAxisIndex ) = 3852500;
@@ -138,31 +110,7 @@ int main( )
                 = unit_conversions::convertDegreesToRadians( 23.4 );
         SatelliteInitialStateInKeplerianElements( trueAnomalyIndex ) =
                 unit_conversions::convertDegreesToRadians( 180.0 );
-
-        // Define body settings for simulation.
-        bodiesToCreate.push_back( "Sun" );
-        bodiesToCreate.push_back( "Mars" );
-        bodiesToCreate.push_back( "Earth" );
-
-        // Add Martian atmosphere
-        bodySettings[ "Mars" ]->gravityFieldSettings = boost::make_shared< FromFileSphericalHarmonicsGravityFieldSettings >( jgmro120d );
-        string atmosphereFile = input_output::getTudatRootPath( ) + "/External/AtmosphereTables/MCDMeanAtmosphere.dat";
-        bodySettings[ "Mars" ]->atmosphereSettings = boost::make_shared< TabulatedAtmosphereSettings >( atmosphereFile );
-
-        // Accelerations
-        accelerationsOfSatellite[ "Mars" ].push_back( boost::make_shared< SphericalHarmonicAccelerationSettings >( 21, 21 ) );
-        for( unsigned int i = 0; i < bodiesToCreate.size( ); i++ )
-        {
-            if ( i != 1 )
-            {
-                accelerationsOfSatellite[ bodiesToCreate.at( i ) ].push_back( boost::make_shared< AccelerationSettings >(
-                                                                                  basic_astrodynamics::central_gravity ) );
-            }
-        }
-        accelerationsOfSatellite[ "Sun" ].push_back( boost::make_shared< AccelerationSettings >(
-                                                         basic_astrodynamics::cannon_ball_radiation_pressure ) );
-        accelerationsOfSatellite[ "Mars" ].push_back( boost::make_shared< AccelerationSettings >(
-                                                          basic_astrodynamics::aerodynamic ) );
+        break;
     }
     case 2:
     {
@@ -170,7 +118,7 @@ int main( )
     }
     default:
     {
-
+        std::cerr << "Mode not recognized." << std::endl;
     }
     }
 
@@ -183,6 +131,37 @@ int main( )
     spice_interface::loadSpiceKernelInTudat( input_output::getSpiceKernelPath( ) + "de-403-masses.tpc" );
     spice_interface::loadSpiceKernelInTudat( input_output::getSpiceKernelPath( ) + "de421.bsp" );
 
+    // Set simulation time settings.
+    const double simulationStartEpoch = 7.0 * tudat::physical_constants::JULIAN_YEAR +
+            30.0 * 6.0 * tudat::physical_constants::JULIAN_DAY;
+    const double simulationEndEpoch = simulationDuration + simulationStartEpoch;
+
+    // Define body settings for simulation.
+    std::vector< std::string > bodiesToCreate;
+    switch ( testCase )
+    {
+    case 0:
+    case 1:
+    {
+        bodiesToCreate.push_back( "Sun" );
+        bodiesToCreate.push_back( "Mars" );
+        bodiesToCreate.push_back( "Earth" );
+        break;
+    }
+    case 2:
+    {
+        bodiesToCreate.push_back( "Sun" );
+        bodiesToCreate.push_back( "Mercury" );
+        bodiesToCreate.push_back( "Mars" );
+        bodiesToCreate.push_back( "Earth" );
+        bodiesToCreate.push_back( "Jupiter" );
+        bodiesToCreate.push_back( "Saturn" );
+        bodiesToCreate.push_back( "Neptune" );
+        bodiesToCreate.push_back( "Uranus" );
+        break;
+    }
+    }
+
     // Create body objects.
     std::map< std::string, boost::shared_ptr< BodySettings > > bodySettings =
             getDefaultBodySettings( bodiesToCreate, simulationStartEpoch - 300.0, simulationEndEpoch + 300.0 );
@@ -191,6 +170,9 @@ int main( )
         bodySettings[ bodiesToCreate.at( i ) ]->ephemerisSettings->resetFrameOrientation( "J2000" );
         bodySettings[ bodiesToCreate.at( i ) ]->rotationModelSettings->resetOriginalFrame( "J2000" );
     }
+    bodySettings[ "Mars" ]->gravityFieldSettings = boost::make_shared< FromFileSphericalHarmonicsGravityFieldSettings >( jgmro120d );
+    std::string atmosphereFile =  input_output::getTudatRootPath( ) + "/External/AtmosphereTables/MCDMeanAtmosphere.dat";
+    bodySettings[ "Mars" ]->atmosphereSettings = boost::make_shared< TabulatedAtmosphereSettings >( atmosphereFile );
     NamedBodyMap bodyMap = createBodies( bodySettings );
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -247,6 +229,32 @@ int main( )
     std::vector< std::string > bodiesToPropagate;
     std::vector< std::string > centralBodies;
 
+    // Define propagation settings.
+    bool keplerOrbit = false;
+    std::map< std::string, std::vector< boost::shared_ptr< AccelerationSettings > > > accelerationsOfSatellite;
+    if ( keplerOrbit )
+    {
+        accelerationsOfSatellite[ "Mars" ].push_back( boost::make_shared< AccelerationSettings >(
+                                                          basic_astrodynamics::central_gravity ) );
+    }
+    else
+    {
+        accelerationsOfSatellite[ "Mars" ].push_back( boost::make_shared< SphericalHarmonicAccelerationSettings >( 21, 21 ) );
+        for( unsigned int i = 0; i < bodiesToCreate.size( ); i++ )
+        {
+            if ( i != 1 )
+            {
+                accelerationsOfSatellite[ bodiesToCreate.at( i ) ].push_back( boost::make_shared< AccelerationSettings >(
+                                                                                  basic_astrodynamics::central_gravity ) );
+            }
+        }
+        accelerationsOfSatellite[ "Sun" ].push_back( boost::make_shared< AccelerationSettings >(
+                                                         basic_astrodynamics::cannon_ball_radiation_pressure ) );
+
+        accelerationsOfSatellite[ "Mars" ].push_back( boost::make_shared< AccelerationSettings >(
+                                                          basic_astrodynamics::aerodynamic ) );
+    }
+
     // Add acceleration information
     accelerationMap[ "Satellite" ] = accelerationsOfSatellite;
     bodiesToPropagate.push_back( "Satellite" );
@@ -278,7 +286,7 @@ int main( )
         std::cout << "Propagator: " << propagatorType + 1 << std::endl;
 
         // Loop over integrators
-        integratorLimit = ( propagatorType == 6 ) ? 1 : 1; // only use the variable step size integrator
+        integratorLimit = ( propagatorType == 6 ) ? 1 : 2; // only use the variable step size integrator
         for ( int integratorType = 0; integratorType < integratorLimit; integratorType++ )
         {
             // Progress
@@ -342,14 +350,11 @@ int main( )
                 else if ( integratorType == 1 )
                 {
                     integratorSettings = boost::make_shared< IntegratorSettings< > > (
-                                rungeKutta4, simulationStartEpoch, 150.0 );
+                                rungeKutta4, simulationStartEpoch, constantTimeStep );
                 }
             }
 
             ///////////////////////     PROPAGATE ORBIT                     ////////////////////////////////////////////
-
-            // Preassign variables
-            std::map< double, Eigen::VectorXd > cartesianIntegrationResult;
 
             // Timeing
             time_t startTime, endTime;
@@ -358,7 +363,8 @@ int main( )
             // Create simulation object and propagate dynamics.
             SingleArcDynamicsSimulator< > dynamicsSimulator(
                         bodyMap, integratorSettings, propagatorSettings, true, false, false );
-            cartesianIntegrationResult = dynamicsSimulator.getEquationsOfMotionNumericalSolution( );
+            std::map< double, Eigen::VectorXd > cartesianIntegrationResult = dynamicsSimulator.getEquationsOfMotionNumericalSolution( );
+            std::map< double, double > functionEvaluationsMap = dynamicsSimulator.getCumulativeNumberOfFunctionEvaluations( );
 
             // Timing
             endTime = time( 0 );
@@ -406,19 +412,28 @@ int main( )
             }
 
             // Write perturbed satellite propagation history to file.
-            input_output::writeDataMapToTextFile( cartesianIntegrationResult,
-                                                  "test_trajectory" + nameAdditionPropagator[ propagatorType ] +
+            input_output::writeDataMapToTextFile( functionEvaluationsMap,
+                                                  "eval" + nameAdditionPropagator[ propagatorType ] +
                                                   nameAdditionIntegrator[ integratorType ] + ".dat",
-                                                  getOutputPath( ),
+                                                  getOutputPath( "Propagators/" + pathAdditionTestCase[ testCase ] ),
+                                                  "",
+                                                  std::numeric_limits< double >::digits10,
+                                                  std::numeric_limits< double >::digits10,
+                                                  "," );
+
+            input_output::writeDataMapToTextFile( cartesianIntegrationResult,
+                                                  "trajectory" + nameAdditionPropagator[ propagatorType ] +
+                                                  nameAdditionIntegrator[ integratorType ] + ".dat",
+                                                  getOutputPath( "Propagators/" + pathAdditionTestCase[ testCase ] ),
                                                   "",
                                                   std::numeric_limits< double >::digits10,
                                                   std::numeric_limits< double >::digits10,
                                                   "," );
 
             input_output::writeDataMapToTextFile( keplerianIntegrationResult,
-                                                  "test_orbit" + nameAdditionPropagator[ propagatorType ] +
+                                                  "orbit" + nameAdditionPropagator[ propagatorType ] +
                                                   nameAdditionIntegrator[ integratorType ] + ".dat",
-                                                  getOutputPath( ),
+                                                  getOutputPath( "Propagators/" + pathAdditionTestCase[ testCase ] ),
                                                   "",
                                                   std::numeric_limits< double >::digits10,
                                                   std::numeric_limits< double >::digits10,
@@ -427,9 +442,9 @@ int main( )
             if ( propagatorType > 2 && propagatorType < 6 )
             {
                 input_output::writeDataMapToTextFile( usmIntegrationResult,
-                                                      "test_usm" + nameAdditionPropagator[ propagatorType ] +
+                                                      "usm" + nameAdditionPropagator[ propagatorType ] +
                                                       nameAdditionIntegrator[ integratorType ] + ".dat",
-                                                      getOutputPath( ),
+                                                      getOutputPath( "Propagators/" + pathAdditionTestCase[ testCase ] ),
                                                       "",
                                                       std::numeric_limits< double >::digits10,
                                                       std::numeric_limits< double >::digits10,
