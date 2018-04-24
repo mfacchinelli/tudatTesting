@@ -22,7 +22,7 @@ static inline std::string getOutputPath(
     // Strip filename from temporary string and return root-path string.
     std::string reducedPath = filePath_.substr( 0, filePath_.length( ) -
                                                 std::string( "usmTest.cpp" ).length( ) );
-    std::string outputPath = reducedPath + "SimulationOutput/USM";
+    std::string outputPath = reducedPath + "SimulationOutput/";
     if ( extraDirectory != "" )
     {
         outputPath += extraDirectory;
@@ -342,7 +342,7 @@ int main( )
             input_output::writeDataMapToTextFile( cartesianIntegrationResult,
                                                   "test_trajectory" + nameAdditionPropagator[ propagatorType ] +
                                                   nameAdditionIntegrator[ integratorType ] + ".dat",
-                                                  getOutputPath( ),
+                                                  getOutputPath( "USM" ),
                                                   "",
                                                   std::numeric_limits< double >::digits10,
                                                   std::numeric_limits< double >::digits10,
@@ -351,7 +351,7 @@ int main( )
             input_output::writeDataMapToTextFile( keplerianIntegrationResult,
                                                   "test_orbit" + nameAdditionPropagator[ propagatorType ] +
                                                   nameAdditionIntegrator[ integratorType ] + ".dat",
-                                                  getOutputPath( ),
+                                                  getOutputPath( "USM" ),
                                                   "",
                                                   std::numeric_limits< double >::digits10,
                                                   std::numeric_limits< double >::digits10,
@@ -362,7 +362,7 @@ int main( )
                 input_output::writeDataMapToTextFile( usmIntegrationResult,
                                                       "test_usm" + nameAdditionPropagator[ propagatorType ] +
                                                       nameAdditionIntegrator[ integratorType ] + ".dat",
-                                                      getOutputPath( ),
+                                                      getOutputPath( "USM" ),
                                                       "",
                                                       std::numeric_limits< double >::digits10,
                                                       std::numeric_limits< double >::digits10,

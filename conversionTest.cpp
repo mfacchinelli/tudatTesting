@@ -362,49 +362,56 @@ int main( )
 
         // Write perturbed satellite propagation history to file.
         input_output::writeDataMapToTextFile( keplerianElementsInput,
-                                              "kepler_input_" + std::to_string( conversionMode ) + ".dat",getOutputPath( ),
+                                              "kepler_input_" + std::to_string( conversionMode ) + ".dat",
+                                              getOutputPath( "Conversions" ),
                                               "",
                                               std::numeric_limits< int >::digits10,
                                               std::numeric_limits< double >::digits10,
                                               "," );
 
         input_output::writeDataMapToTextFile( keplerianElementsUSM7Output,
-                                              "kepler_usm7_output_" + std::to_string( conversionMode ) + ".dat",getOutputPath( ),
+                                              "kepler_usm7_output_" + std::to_string( conversionMode ) + ".dat",
+                                              getOutputPath( "Conversions" ),
                                               "",
                                               std::numeric_limits< int >::digits10,
                                               std::numeric_limits< double >::digits10,
                                               "," );
 
         input_output::writeDataMapToTextFile( keplerianElementsUSM6Output,
-                                              "kepler_usm6_output_" + std::to_string( conversionMode ) + ".dat",getOutputPath( ),
+                                              "kepler_usm6_output_" + std::to_string( conversionMode ) + ".dat",
+                                              getOutputPath( "Conversions" ),
                                               "",
                                               std::numeric_limits< int >::digits10,
                                               std::numeric_limits< double >::digits10,
                                               "," );
 
         input_output::writeDataMapToTextFile( keplerianElementsUSMEMOutput,
-                                              "kepler_usmem_output_" + std::to_string( conversionMode ) + ".dat",getOutputPath( ),
+                                              "kepler_usmem_output_" + std::to_string( conversionMode ) + ".dat",
+                                              getOutputPath( "Conversions" ),
                                               "",
                                               std::numeric_limits< int >::digits10,
                                               std::numeric_limits< double >::digits10,
                                               "," );
 
         input_output::writeDataMapToTextFile( unifiedStateModelQuaternionsElementsOutput,
-                                              "usm7_output_" + std::to_string( conversionMode ) + ".dat",getOutputPath( ),
+                                              "usm7_output_" + std::to_string( conversionMode ) + ".dat",
+                                              getOutputPath( "Conversions" ),
                                               "",
                                               std::numeric_limits< int >::digits10,
                                               std::numeric_limits< double >::digits10,
                                               "," );
 
         input_output::writeDataMapToTextFile( unifiedStateModelModifiedRodriguesParametersElementsOutput,
-                                              "usm6_output_" + std::to_string( conversionMode ) + ".dat",getOutputPath( ),
+                                              "usm6_output_" + std::to_string( conversionMode ) + ".dat",
+                                              getOutputPath( "Conversions" ),
                                               "",
                                               std::numeric_limits< int >::digits10,
                                               std::numeric_limits< double >::digits10,
                                               "," );
 
         input_output::writeDataMapToTextFile( unifiedStateModelExponentialMapElementsOutput,
-                                              "usmem_output_" + std::to_string( conversionMode ) + ".dat",getOutputPath( ),
+                                              "usmem_output_" + std::to_string( conversionMode ) + ".dat",
+                                              getOutputPath( "Conversions" ),
                                               "",
                                               std::numeric_limits< int >::digits10,
                                               std::numeric_limits< double >::digits10,
