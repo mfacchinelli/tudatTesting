@@ -340,7 +340,7 @@ int main( )
 
             // Write perturbed satellite propagation history to file.
             input_output::writeDataMapToTextFile( cartesianIntegrationResult,
-                                                  "test_trajectory" + nameAdditionPropagator[ propagatorType ] +
+                                                  "trajectory" + nameAdditionPropagator[ propagatorType ] +
                                                   nameAdditionIntegrator[ integratorType ] + ".dat",
                                                   getOutputPath( "USM" ),
                                                   "",
@@ -349,7 +349,7 @@ int main( )
                                                   "," );
 
             input_output::writeDataMapToTextFile( keplerianIntegrationResult,
-                                                  "test_orbit" + nameAdditionPropagator[ propagatorType ] +
+                                                  "orbit" + nameAdditionPropagator[ propagatorType ] +
                                                   nameAdditionIntegrator[ integratorType ] + ".dat",
                                                   getOutputPath( "USM" ),
                                                   "",
@@ -360,7 +360,7 @@ int main( )
             if ( propagatorType > 2 && propagatorType < 6 )
             {
                 input_output::writeDataMapToTextFile( usmIntegrationResult,
-                                                      "test_usm" + nameAdditionPropagator[ propagatorType ] +
+                                                      "usm" + nameAdditionPropagator[ propagatorType ] +
                                                       nameAdditionIntegrator[ integratorType ] + ".dat",
                                                       getOutputPath( "USM" ),
                                                       "",
