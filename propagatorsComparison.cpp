@@ -68,51 +68,71 @@ int main( )
 
     // Select case
     //      0: Single aerobraking sweep
-    //      1: Circular orbit at MMO (Mid Mars Orbit)
-    //      2: Interplanetary trajectory
+    //      1: Full aerobraking
+    //      2: Circular orbit at LMO (Low Mars Orbit)
+    //      3: Interplanetary trajectory
     int testCase = 0;
-    std::vector< string > pathAdditionTestCase = { "aero", "circ", "inter" };
+    std::vector< string > pathAdditionTestCase = { "aero", "aero_full", "circ", "inter" };
     switch ( testCase )
     {
-    case 0:
+    case 0: // Single aerobraking sweep
     {
         // Set simulation time settings.
-        simulationDuration = 0.85 * tudat::physical_constants::JULIAN_DAY;
+        simulationDuration = 1.0 * tudat::physical_constants::JULIAN_DAY;
         constantTimeStep = 15.0;
 
         // Initial conditions
-        SatelliteInitialStateInKeplerianElements( semiMajorAxisIndex ) = 27227500;
-        SatelliteInitialStateInKeplerianElements( eccentricityIndex ) = 0.869066;
+        SatelliteInitialStateInKeplerianElements( semiMajorAxisIndex ) = 27185000;
+        SatelliteInitialStateInKeplerianElements( eccentricityIndex ) = 0.871988;
         SatelliteInitialStateInKeplerianElements( inclinationIndex ) =
                 unit_conversions::convertDegreesToRadians( 93.0 );
-        SatelliteInitialStateInKeplerianElements( argumentOfPeriapsisIndex )
-                = unit_conversions::convertDegreesToRadians( 158.7 );
-        SatelliteInitialStateInKeplerianElements( longitudeOfAscendingNodeIndex )
-                = unit_conversions::convertDegreesToRadians( 23.4 );
+        SatelliteInitialStateInKeplerianElements( argumentOfPeriapsisIndex ) =
+                unit_conversions::convertDegreesToRadians( 158.7 );
+        SatelliteInitialStateInKeplerianElements( longitudeOfAscendingNodeIndex ) =
+                unit_conversions::convertDegreesToRadians( 23.4 );
         SatelliteInitialStateInKeplerianElements( trueAnomalyIndex ) =
                 unit_conversions::convertDegreesToRadians( 180.0 );
         break;
     }
-    case 1:
+    case 1: // Full aerobraking
     {
         // Set simulation time settings.
-        simulationDuration = 10.0 * tudat::physical_constants::JULIAN_DAY;
-        constantTimeStep = 150.0;
+        simulationDuration = 30.0 * tudat::physical_constants::JULIAN_DAY;
+        constantTimeStep = 100.0;
 
         // Initial conditions
-        SatelliteInitialStateInKeplerianElements( semiMajorAxisIndex ) = 3852500;
-        SatelliteInitialStateInKeplerianElements( eccentricityIndex ) = 0.003245;
+        SatelliteInitialStateInKeplerianElements( semiMajorAxisIndex ) = 27197250;
+        SatelliteInitialStateInKeplerianElements( eccentricityIndex ) = 0.871366;
         SatelliteInitialStateInKeplerianElements( inclinationIndex ) =
                 unit_conversions::convertDegreesToRadians( 93.0 );
-        SatelliteInitialStateInKeplerianElements( argumentOfPeriapsisIndex )
-                = unit_conversions::convertDegreesToRadians( 158.7 );
-        SatelliteInitialStateInKeplerianElements( longitudeOfAscendingNodeIndex )
-                = unit_conversions::convertDegreesToRadians( 23.4 );
+        SatelliteInitialStateInKeplerianElements( argumentOfPeriapsisIndex ) =
+                unit_conversions::convertDegreesToRadians( 158.7 );
+        SatelliteInitialStateInKeplerianElements( longitudeOfAscendingNodeIndex ) =
+                unit_conversions::convertDegreesToRadians( 23.4 );
         SatelliteInitialStateInKeplerianElements( trueAnomalyIndex ) =
                 unit_conversions::convertDegreesToRadians( 180.0 );
         break;
     }
-    case 2:
+    case 2: // Circular orbit at LMO
+    {
+        // Set simulation time settings.
+        simulationDuration = 27.5 * tudat::physical_constants::JULIAN_DAY;
+        constantTimeStep = 25.0;
+
+        // Initial conditions
+        SatelliteInitialStateInKeplerianElements( semiMajorAxisIndex ) = 3621000;
+        SatelliteInitialStateInKeplerianElements( eccentricityIndex ) = 0.006904;
+        SatelliteInitialStateInKeplerianElements( inclinationIndex ) =
+                unit_conversions::convertDegreesToRadians( 93.0 );
+        SatelliteInitialStateInKeplerianElements( argumentOfPeriapsisIndex ) =
+                unit_conversions::convertDegreesToRadians( 158.7 );
+        SatelliteInitialStateInKeplerianElements( longitudeOfAscendingNodeIndex ) =
+                unit_conversions::convertDegreesToRadians( 23.4 );
+        SatelliteInitialStateInKeplerianElements( trueAnomalyIndex ) =
+                unit_conversions::convertDegreesToRadians( 180.0 );
+        break;
+    }
+    case 3: // Interplanetary trajectory
     {
 
     }
@@ -142,13 +162,14 @@ int main( )
     {
     case 0:
     case 1:
+    case 2:
     {
         bodiesToCreate.push_back( "Sun" );
         bodiesToCreate.push_back( "Mars" );
         bodiesToCreate.push_back( "Earth" );
         break;
     }
-    case 2:
+    case 3:
     {
         bodiesToCreate.push_back( "Sun" );
         bodiesToCreate.push_back( "Mercury" );
@@ -336,8 +357,8 @@ int main( )
             if ( propagatorType == 6 )
             {
                 integratorSettings = boost::make_shared< RungeKuttaVariableStepSizeSettings< > >(
-                            rungeKuttaVariableStepSize, simulationStartEpoch, 10,
-                            RungeKuttaCoefficients::rungeKuttaFehlberg78, 1e-3, 1e4, 1e-15, 1e-15 );
+                            rungeKuttaVariableStepSize, simulationStartEpoch, 25.0,
+                            RungeKuttaCoefficients::rungeKuttaFehlberg78, 1e-3, 1e5, 1e-15, 1e-15 );
             }
             else
             {
