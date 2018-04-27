@@ -21,7 +21,7 @@ static inline std::string getOutputPath(
 
     // Strip filename from temporary string and return root-path string.
     std::string reducedPath = filePath_.substr( 0, filePath_.length( ) -
-                                                std::string( "usmTest.cpp" ).length( ) );
+                                                std::string( "aerobrakingTest.cpp" ).length( ) );
     std::string outputPath = reducedPath + "SimulationOutput/";
     if ( extraDirectory != "" )
     {
@@ -69,13 +69,29 @@ int main( )
     // Set simulation time settings.
     const double simulationStartEpoch = 7.0 * tudat::physical_constants::JULIAN_YEAR +
             30.0 * 6.0 * tudat::physical_constants::JULIAN_DAY;
-    const double simulationEndEpoch = 82.5 * tudat::physical_constants::JULIAN_DAY + simulationStartEpoch;
+    const double simulationEndEpoch = 30.0 * tudat::physical_constants::JULIAN_DAY + simulationStartEpoch;
 
     // Define body settings for simulation.
     std::vector< std::string > bodiesToCreate;
     bodiesToCreate.push_back( "Sun" );
     bodiesToCreate.push_back( "Mars" );
+    bodiesToCreate.push_back( "Venus" );
     bodiesToCreate.push_back( "Earth" );
+    bodiesToCreate.push_back( "Jupiter" );
+    bodiesToCreate.push_back( "Saturn" );
+
+    // Tabulated atmosphere settings
+    std::map< int, std::string > tabulatedAtmosphereFiles;
+    tabulatedAtmosphereFiles[ 0 ] = input_output::getAtmosphereTablesPath( ) +
+            "MCDMeanAtmosphereTimeAverage/density.dat";
+    tabulatedAtmosphereFiles[ 1 ] = input_output::getAtmosphereTablesPath( ) +
+            "MCDMeanAtmosphereTimeAverage/pressure.dat";
+    tabulatedAtmosphereFiles[ 2 ] = input_output::getAtmosphereTablesPath( ) +
+            "MCDMeanAtmosphereTimeAverage/temperature.dat";
+    std::vector< AtmosphereDependentVariables > atmosphereDependentVariables = {
+        density_dependent_atmosphere, pressure_dependent_atmosphere, temperature_dependent_atmosphere };
+    std::vector< AtmosphereIndependentVariables > atmosphereIndependentVariables = {
+        longitude_dependent_atmosphere, latitude_dependent_atmosphere, altitude_dependent_atmosphere };
 
     // Create body objects.
     std::map< std::string, boost::shared_ptr< BodySettings > > bodySettings =
@@ -86,8 +102,10 @@ int main( )
         bodySettings[ bodiesToCreate.at( i ) ]->rotationModelSettings->resetOriginalFrame( "J2000" );
     }
     bodySettings[ "Mars" ]->gravityFieldSettings = boost::make_shared< FromFileSphericalHarmonicsGravityFieldSettings >( jgmro120d );
-    std::string atmosphereFile =  input_output::getTudatRootPath( ) + "/External/AtmosphereTables/MCDMeanAtmosphere.dat";
-    bodySettings[ "Mars" ]->atmosphereSettings = boost::make_shared< TabulatedAtmosphereSettings >( atmosphereFile );
+    bodySettings[ "Mars" ]->atmosphereSettings = boost::make_shared< TabulatedAtmosphereSettings >( tabulatedAtmosphereFiles,
+                                                                                                    atmosphereDependentVariables,
+                                                                                                    atmosphereIndependentVariables,
+                                                                                                    197.0, 1.3 );
     NamedBodyMap bodyMap = createBodies( bodySettings );
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -184,13 +202,11 @@ int main( )
 
     // Set Keplerian elements for Satellite.
     Eigen::Vector6d SatelliteInitialStateInKeplerianElements;
-    SatelliteInitialStateInKeplerianElements( semiMajorAxisIndex ) = 27290000;//23490000
-    SatelliteInitialStateInKeplerianElements( eccentricityIndex ) = 0.8375;//0.847169//0.8375//0.864786
+    SatelliteInitialStateInKeplerianElements( semiMajorAxisIndex ) = 27197250;
+    SatelliteInitialStateInKeplerianElements( eccentricityIndex ) = 0.871366;
     SatelliteInitialStateInKeplerianElements( inclinationIndex ) = unit_conversions::convertDegreesToRadians( 93.0 );
-    SatelliteInitialStateInKeplerianElements( argumentOfPeriapsisIndex )
-            = unit_conversions::convertDegreesToRadians( 158.7 );
-    SatelliteInitialStateInKeplerianElements( longitudeOfAscendingNodeIndex )
-            = unit_conversions::convertDegreesToRadians( 23.4 );
+    SatelliteInitialStateInKeplerianElements( argumentOfPeriapsisIndex ) = unit_conversions::convertDegreesToRadians( 158.7 );
+    SatelliteInitialStateInKeplerianElements( longitudeOfAscendingNodeIndex ) = unit_conversions::convertDegreesToRadians( 23.4 );
     SatelliteInitialStateInKeplerianElements( trueAnomalyIndex ) = unit_conversions::convertDegreesToRadians( 180.0 );
 
     double marsGravitationalParameter = bodyMap.at( "Mars" )->getGravityFieldModel( )->getGravitationalParameter( );
@@ -201,174 +217,171 @@ int main( )
     ///////////////////////             LOOP OVER PROPAGATORS                  ////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    // Loop over propagators
-    int integratorLimit;
-    std::vector< string > nameAdditionPropagator = { "_cowell", "_encke", "_gauss", "_usm7", "_usm6", "_usmem", "_ref" };
-    std::vector< string > nameAdditionIntegrator = { "_var", "_const" };
-    for ( int propagatorType = 0; propagatorType < 7; propagatorType++ )
+    // Select propagator
+    int propagatorType = 6;
+
+    ///////////////////////     CREATE PROPAGATION SETTINGS         ////////////////////////////////////////////
+
+    // Select propagator
+    TranslationalPropagatorType translationalPropagatorType = undefined_propagator;
+    if ( propagatorType == 0 )
     {
-        // Progress
-        std::cout << "Propagator: " << propagatorType + 1 << std::endl;
+        translationalPropagatorType = cowell;
+    }
+    else if ( propagatorType == 1 )
+    {
+        translationalPropagatorType = encke;
+    }
+    else if ( propagatorType == 2 )
+    {
+        translationalPropagatorType = gauss_keplerian;
+    }
+    else if ( propagatorType == 3 )
+    {
+        translationalPropagatorType = unified_state_model_quaternions;
+    }
+    else if ( propagatorType == 4 )
+    {
+        translationalPropagatorType = unified_state_model_modified_rodrigues_parameters;
+    }
+    else if ( propagatorType == 5 )
+    {
+        translationalPropagatorType = unified_state_model_exponential_map;
+    }
+    else if ( propagatorType == 6 )
+    {
+        translationalPropagatorType = cowell;
+    }
 
-        // Loop over integrators
-        integratorLimit = ( propagatorType == 6 ) ? 1 : 2;
-        for ( int integratorType = 0; integratorType < integratorLimit; integratorType++ )
+    // Dependent variables
+    std::vector< boost::shared_ptr< SingleDependentVariableSaveSettings > > dependentVariables;
+    dependentVariables.push_back( boost::make_shared< SingleAccelerationDependentVariableSaveSettings >(
+                    basic_astrodynamics::spherical_harmonic_gravity, "Satellite", "Mars", true ) );
+    dependentVariables.push_back( boost::make_shared< SingleAccelerationDependentVariableSaveSettings >(
+                    basic_astrodynamics::aerodynamic, "Satellite", "Mars", true ) );
+    dependentVariables.push_back( boost::make_shared< SingleAccelerationDependentVariableSaveSettings >(
+                    basic_astrodynamics::cannon_ball_radiation_pressure, "Satellite", "Sun", true ) );
+    for( unsigned int i = 0; i < bodiesToCreate.size( ); i++ )
+    {
+        if ( i != 1 )
         {
-            // Progress
-            std::cout << "Integrator: " << integratorType + 1 << std::endl;
-
-            ///////////////////////     CREATE PROPAGATION SETTINGS         ////////////////////////////////////////////
-
-            // Select propagator
-            TranslationalPropagatorType translationalPropagatorType = undefined_propagator;
-            if ( propagatorType == 0 )
-            {
-                translationalPropagatorType = cowell;
-            }
-            else if ( propagatorType == 1 )
-            {
-                translationalPropagatorType = encke;
-            }
-            else if ( propagatorType == 2 )
-            {
-                translationalPropagatorType = gauss_keplerian;
-            }
-            else if ( propagatorType == 3 )
-            {
-                translationalPropagatorType = unified_state_model_quaternions;
-            }
-            else if ( propagatorType == 4 )
-            {
-                translationalPropagatorType = unified_state_model_modified_rodrigues_parameters;
-            }
-            else if ( propagatorType == 5 )
-            {
-                translationalPropagatorType = unified_state_model_exponential_map;
-            }
-            else
-            {
-                translationalPropagatorType = cowell;
-            }
-
-            // Propagator settings
-            boost::shared_ptr< TranslationalStatePropagatorSettings< double > > propagatorSettings =
-                    boost::make_shared< TranslationalStatePropagatorSettings< double > >
-                    ( centralBodies, accelerationModelMap, bodiesToPropagate, SatelliteInitialState, simulationEndEpoch,
-                      translationalPropagatorType );
-
-            // Integrator settings
-            boost::shared_ptr< IntegratorSettings< > > integratorSettings;
-            if ( propagatorType == 6 )
-            {
-                integratorSettings = boost::make_shared< RungeKuttaVariableStepSizeSettings< > >(
-                            rungeKuttaVariableStepSize, simulationStartEpoch, 10,
-                            RungeKuttaCoefficients::rungeKuttaFehlberg78, 1e-3, 1e4, 1e-15, 1e-15 );
-            }
-            else
-            {
-                if ( integratorType == 0 )
-                {
-                    integratorSettings = boost::make_shared< RungeKuttaVariableStepSizeSettings< > >(
-                                rungeKuttaVariableStepSize, simulationStartEpoch, 100.0,
-                                RungeKuttaCoefficients::rungeKuttaFehlberg56, 1e-1, 1e5, 1e-7, 1e-7 );
-                }
-                else if ( integratorType == 1 )
-                {
-                    integratorSettings = boost::make_shared< IntegratorSettings< > > (
-                                rungeKutta4, simulationStartEpoch, 150.0 );
-                }
-            }
-
-            ///////////////////////     PROPAGATE ORBIT                     ////////////////////////////////////////////
-
-            // Preassign variables
-            std::map< double, Eigen::VectorXd > cartesianIntegrationResult;
-
-            // Timeing
-            time_t startTime, endTime;
-            startTime = time( 0 );
-
-            // Create simulation object and propagate dynamics.
-            SingleArcDynamicsSimulator< > dynamicsSimulator(
-                        bodyMap, integratorSettings, propagatorSettings, true, false, false );
-            cartesianIntegrationResult = dynamicsSimulator.getEquationsOfMotionNumericalSolution( );
-
-            // Timing
-            endTime = time( 0 );
-            std::cout << "Propagation time: " << difftime( endTime, startTime ) << " s" << std::endl << std::endl;
-
-            ///////////////////////     PROVIDE OUTPUT TO FILES             ////////////////////////////////////////////
-
-            // Compute map of Kepler elements
-            Eigen::Vector6d currentCartesianState;
-            std::map< double, Eigen::VectorXd > keplerianIntegrationResult;
-            std::map< double, Eigen::VectorXd > usmIntegrationResult;
-            for( std::map< double, Eigen::VectorXd >::const_iterator stateIterator = cartesianIntegrationResult.begin( );
-                 stateIterator != cartesianIntegrationResult.end( ); stateIterator++ )
-            {
-                // Retrieve current Cartesian state (convert to Earth-centered frame if needed)
-                currentCartesianState = stateIterator->second;
-
-                if ( centralBodies.at( 0 ) == "SSB" )
-                {
-                    currentCartesianState -=
-                            bodyMap[ "Mars" ]->getStateInBaseFrameFromEphemeris( stateIterator->first );
-                }
-
-                keplerianIntegrationResult[ stateIterator->first ] =
-                        convertCartesianToKeplerianElements( currentCartesianState, marsGravitationalParameter );
-
-                if ( propagatorType == 3 )
-                {
-                    usmIntegrationResult[ stateIterator->first ] =
-                            convertCartesianToUnifiedStateModelQuaternionsElements( currentCartesianState,
-                                                                                    marsGravitationalParameter );
-                }
-                else if ( propagatorType == 4 )
-                {
-                    usmIntegrationResult[ stateIterator->first ] =
-                            convertCartesianToUnifiedStateModelModifiedRodriguesParametersElements(
-                                currentCartesianState, marsGravitationalParameter );
-                }
-                else if ( propagatorType == 5 )
-                {
-                    usmIntegrationResult[ stateIterator->first ] =
-                            convertCartesianToUnifiedStateModelExponentialMapElements( currentCartesianState,
-                                                                                       marsGravitationalParameter );
-                }
-            }
-
-            // Write perturbed satellite propagation history to file.
-            input_output::writeDataMapToTextFile( cartesianIntegrationResult,
-                                                  "trajectory" + nameAdditionPropagator[ propagatorType ] +
-                                                  nameAdditionIntegrator[ integratorType ] + ".dat",
-                                                  getOutputPath( "USM" ),
-                                                  "",
-                                                  std::numeric_limits< double >::digits10,
-                                                  std::numeric_limits< double >::digits10,
-                                                  "," );
-
-            input_output::writeDataMapToTextFile( keplerianIntegrationResult,
-                                                  "orbit" + nameAdditionPropagator[ propagatorType ] +
-                                                  nameAdditionIntegrator[ integratorType ] + ".dat",
-                                                  getOutputPath( "USM" ),
-                                                  "",
-                                                  std::numeric_limits< double >::digits10,
-                                                  std::numeric_limits< double >::digits10,
-                                                  "," );
-
-            if ( propagatorType > 2 && propagatorType < 6 )
-            {
-                input_output::writeDataMapToTextFile( usmIntegrationResult,
-                                                      "usm" + nameAdditionPropagator[ propagatorType ] +
-                                                      nameAdditionIntegrator[ integratorType ] + ".dat",
-                                                      getOutputPath( "USM" ),
-                                                      "",
-                                                      std::numeric_limits< double >::digits10,
-                                                      std::numeric_limits< double >::digits10,
-                                                      "," );
-            }
+            dependentVariables.push_back( boost::make_shared< SingleAccelerationDependentVariableSaveSettings >(
+                            basic_astrodynamics::third_body_central_gravity, "Satellite", bodiesToCreate.at( i ), true ) );
         }
+    }
+
+    // Propagator settings
+    boost::shared_ptr< TranslationalStatePropagatorSettings< double > > propagatorSettings =
+            boost::make_shared< TranslationalStatePropagatorSettings< double > >
+            ( centralBodies, accelerationModelMap, bodiesToPropagate, SatelliteInitialState, simulationEndEpoch,
+              translationalPropagatorType, boost::make_shared< DependentVariableSaveSettings >( dependentVariables ) );
+
+    // Integrator settings
+    boost::shared_ptr< IntegratorSettings< > > integratorSettings;
+    if ( propagatorType == 6 )
+    {
+        integratorSettings = boost::make_shared< RungeKuttaVariableStepSizeSettings< > >(
+                    rungeKuttaVariableStepSize, simulationStartEpoch, 10,
+                    RungeKuttaCoefficients::rungeKuttaFehlberg78, 1e-3, 1e4, 1e-15, 1e-15 );
+    }
+    else
+    {
+        integratorSettings = boost::make_shared< RungeKuttaVariableStepSizeSettings< > >(
+                    rungeKuttaVariableStepSize, simulationStartEpoch, 100.0,
+                    RungeKuttaCoefficients::rungeKuttaFehlberg56, 1e-1, 1e5, 1e-7, 1e-7 );
+    }
+
+    ///////////////////////     PROPAGATE ORBIT                     ////////////////////////////////////////////
+
+    // Timeing
+    time_t startTime, endTime;
+    startTime = time( 0 );
+
+    // Create simulation object and propagate dynamics.
+    SingleArcDynamicsSimulator< > dynamicsSimulator(
+                bodyMap, integratorSettings, propagatorSettings, true, false, false );
+    std::map< double, Eigen::VectorXd > cartesianIntegrationResult = dynamicsSimulator.getEquationsOfMotionNumericalSolution( );
+    std::map< double, Eigen::VectorXd > dependentVariableSolution = dynamicsSimulator.getDependentVariableHistory( );
+
+    // Timing
+    endTime = time( 0 );
+    std::cout << "Propagation time: " << difftime( endTime, startTime ) << " s" << std::endl << std::endl;
+
+    ///////////////////////     PROVIDE OUTPUT TO FILES             ////////////////////////////////////////////
+
+    // Compute map of Kepler elements
+    Eigen::Vector6d currentCartesianState;
+    std::map< double, Eigen::VectorXd > keplerianIntegrationResult;
+    std::map< double, Eigen::VectorXd > usmIntegrationResult;
+    for( std::map< double, Eigen::VectorXd >::const_iterator stateIterator = cartesianIntegrationResult.begin( );
+         stateIterator != cartesianIntegrationResult.end( ); stateIterator++ )
+    {
+        // Retrieve current Cartesian state (convert to Earth-centered frame if needed)
+        currentCartesianState = stateIterator->second;
+
+        if ( centralBodies.at( 0 ) == "SSB" )
+        {
+            currentCartesianState -=
+                    bodyMap[ "Mars" ]->getStateInBaseFrameFromEphemeris( stateIterator->first );
+        }
+
+        keplerianIntegrationResult[ stateIterator->first ] =
+                convertCartesianToKeplerianElements( currentCartesianState, marsGravitationalParameter );
+
+        if ( propagatorType == 3 )
+        {
+            usmIntegrationResult[ stateIterator->first ] =
+                    convertCartesianToUnifiedStateModelQuaternionsElements( currentCartesianState,
+                                                                            marsGravitationalParameter );
+        }
+        else if ( propagatorType == 4 )
+        {
+            usmIntegrationResult[ stateIterator->first ] =
+                    convertCartesianToUnifiedStateModelModifiedRodriguesParametersElements(
+                        currentCartesianState, marsGravitationalParameter );
+        }
+        else if ( propagatorType == 5 )
+        {
+            usmIntegrationResult[ stateIterator->first ] =
+                    convertCartesianToUnifiedStateModelExponentialMapElements( currentCartesianState,
+                                                                               marsGravitationalParameter );
+        }
+    }
+
+    // Write perturbed satellite propagation history to file.
+    input_output::writeDataMapToTextFile( cartesianIntegrationResult,
+                                          "trajectory.dat",
+                                          getOutputPath( "Aerobraking" ),
+                                          "",
+                                          std::numeric_limits< double >::digits10,
+                                          std::numeric_limits< double >::digits10,
+                                          "," );
+
+    input_output::writeDataMapToTextFile( keplerianIntegrationResult,
+                                          "orbit.dat",
+                                          getOutputPath( "Aerobraking" ),
+                                          "",
+                                          std::numeric_limits< double >::digits10,
+                                          std::numeric_limits< double >::digits10,
+                                          "," );
+
+    input_output::writeDataMapToTextFile( dependentVariableSolution,
+                                          "dependent.dat",
+                                          getOutputPath( "Aerobraking" ),
+                                          "",
+                                          std::numeric_limits< double >::digits10,
+                                          std::numeric_limits< double >::digits10,
+                                          "," );
+
+    if ( propagatorType > 2 && propagatorType < 6 )
+    {
+        input_output::writeDataMapToTextFile( usmIntegrationResult,
+                                              "usm.dat",
+                                              getOutputPath( "Aerobraking" ),
+                                              "",
+                                              std::numeric_limits< double >::digits10,
+                                              std::numeric_limits< double >::digits10,
+                                              "," );
     }
 
     // Final statement.
