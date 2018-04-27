@@ -183,6 +183,19 @@ int main( )
     }
     }
 
+    // Tabulated atmosphere settings
+    std::map< int, std::string > tabulatedAtmosphereFiles;
+    tabulatedAtmosphereFiles[ 0 ] = input_output::getAtmosphereTablesPath( ) +
+            "MCDMeanAtmosphereTimeAverage/density.dat";
+    tabulatedAtmosphereFiles[ 1 ] = input_output::getAtmosphereTablesPath( ) +
+            "MCDMeanAtmosphereTimeAverage/pressure.dat";
+    tabulatedAtmosphereFiles[ 2 ] = input_output::getAtmosphereTablesPath( ) +
+            "MCDMeanAtmosphereTimeAverage/temperature.dat";
+    std::vector< AtmosphereDependentVariables > atmosphereDependentVariables = {
+        density_dependent_atmosphere, pressure_dependent_atmosphere, temperature_dependent_atmosphere };
+    std::vector< AtmosphereIndependentVariables > atmosphereIndependentVariables = {
+        longitude_dependent_atmosphere, latitude_dependent_atmosphere, altitude_dependent_atmosphere };
+
     // Create body objects.
     std::map< std::string, boost::shared_ptr< BodySettings > > bodySettings =
             getDefaultBodySettings( bodiesToCreate, simulationStartEpoch - 300.0, simulationEndEpoch + 300.0 );
@@ -192,8 +205,10 @@ int main( )
         bodySettings[ bodiesToCreate.at( i ) ]->rotationModelSettings->resetOriginalFrame( "J2000" );
     }
     bodySettings[ "Mars" ]->gravityFieldSettings = boost::make_shared< FromFileSphericalHarmonicsGravityFieldSettings >( jgmro120d );
-    std::string atmosphereFile =  input_output::getTudatRootPath( ) + "/External/AtmosphereTables/MCDMeanAtmosphere.dat";
-    bodySettings[ "Mars" ]->atmosphereSettings = boost::make_shared< TabulatedAtmosphereSettings >( atmosphereFile );
+    bodySettings[ "Mars" ]->atmosphereSettings = boost::make_shared< TabulatedAtmosphereSettings >( tabulatedAtmosphereFiles,
+                                                                                                    atmosphereDependentVariables,
+                                                                                                    atmosphereIndependentVariables,
+                                                                                                    197.0, 1.3 );
     NamedBodyMap bodyMap = createBodies( bodySettings );
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
