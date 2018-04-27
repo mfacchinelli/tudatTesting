@@ -31,10 +31,11 @@ int main( )
     //      1: 1-D: interpolated conditions, IND: nominal order, DEP: nominal order
     //      2: 1-D: corner conditions, IND: nominal order, DEP: shuffled order
     //      3: 3-D: corner conditions, IND: shuffled order, DEP: nominal order
-    //      4: 3-D: random conditions, IND: shuffled order, DEP: shuffled order
+    //      4: 3-D: non-interpolated conditions, IND: shuffled order, DEP: shuffled order
     //      5: 3-D: interpolated conditions, IND: shuffled order, DEP: nominal order
     const int testCase = 5;
-    std::cout << "Test Case " << testCase << " Selected" << std::endl;
+    std::cout << "Test Case < " << testCase << " > Selected" << std::endl;
+    std::cout << "Tolerance is set at: " << tolerance << std::endl << std::endl;
     switch ( testCase )
     {
     case 0: // 1-D: 0 km altitude, IND: nominal order, DEP: nominal order
@@ -113,8 +114,8 @@ int main( )
 
         // Declare input and output
         altitudeInput = 5.0e4;
-        longitudeInput = convertDegreesToRadians( -1.800000e+02 );
-        latitudeInput = convertDegreesToRadians( -9.000000e+01 );
+        longitudeInput = convertDegreesToRadians( -180.0 );
+        latitudeInput = convertDegreesToRadians( -90.0 );
         densityInput = 5.2805275e-05;
         pressureInput = 1.6627685;
         temperatureInput = 151.544;
@@ -124,7 +125,7 @@ int main( )
         temperatureOutput = tabulatedAtmosphere.getTemperature( altitudeInput, longitudeInput, latitudeInput );
         break;
     }
-    case 4: // 3-D: random conditions, IND: shuffled order, DEP: shuffled order
+    case 4: // 3-D: non-interpolated conditions, IND: shuffled order, DEP: shuffled order
     {
         // Create a tabulated atmosphere object.
         std::map< int, std::string > tabulatedAtmosphereFiles;
@@ -177,9 +178,9 @@ int main( )
         altitudeInput = 236.9862e3;
         longitudeInput = convertDegreesToRadians( 72.98632 );
         latitudeInput = convertDegreesToRadians( -65.9762 );
-        densityInput = 8.77037547733958e-13;
-        pressureInput = 7.0603220394366e-08;
-        temperatureInput = 194.731738883754;
+        densityInput = 5.57022396263159e-13;
+        pressureInput = 5.08715805228075e-08;
+        temperatureInput = 174.826970929597;
 
         densityOutput = tabulatedAtmosphere.getDensity( altitudeInput, longitudeInput, latitudeInput );
         pressureOutput = tabulatedAtmosphere.getPressure( altitudeInput, longitudeInput, latitudeInput );
@@ -190,9 +191,9 @@ int main( )
 
     // Show tabulated output
     std::cout << "Density Output: " << densityOutput << " kg/m^3" << std::endl;
-    std::cout << "Difference Density: " << densityOutput - densityInput << " kg/m^3" << std::endl;
+    std::cout << "Difference Density: " << densityOutput - densityInput << " kg/m^3" << std::endl << std::endl;
     std::cout << "Pressure Output: " << pressureOutput<< " Pa" << std::endl;
-    std::cout << "Difference Pressure: " << pressureOutput- pressureInput << " Pa" << std::endl;
+    std::cout << "Difference Pressure: " << pressureOutput- pressureInput << " Pa" << std::endl << std::endl;
     std::cout << "Temperature Output: " << temperatureOutput << " K" << std::endl;
     std::cout << "Difference Temperature: " << temperatureOutput - temperatureInput << " K" << std::endl;
 
