@@ -220,10 +220,10 @@ list(APPEND TUDAT_APPLICATION_ESTIMATION_LIBRARIES tudat_simulation_setup tudat_
     tudat_statistics tudat_propagators ${TUDAT_APPLICATION_EXTERNAL_INTERFACE_LIBRARIES} tudat_basic_astrodynamics
     tudat_basic_mathematics tudat_input_output tudat_basics ${TUDAT_APPLICATION_EXTERNAL_LIBRARIES})
 
-# Add USM test
-add_executable(application_usmTest "${SRCROOT}/usmTest.cpp")
-setup_executable_target(application_usmTest "${SRCROOT}")
-target_link_libraries(application_usmTest ${TUDAT_APPLICATION_PROPAGATION_LIBRARIES} ${Boost_LIBRARIES} )
+# Add aerobraking test
+add_executable(application_aerobrakingTest "${SRCROOT}/aerobrakingTest.cpp")
+setup_executable_target(application_aerobrakingTest "${SRCROOT}")
+target_link_libraries(application_aerobrakingTest ${TUDAT_APPLICATION_PROPAGATION_LIBRARIES} ${Boost_LIBRARIES} )
 
 # Add Mars test
 add_executable(application_marsTest "${SRCROOT}/marsTest.cpp")
