@@ -80,17 +80,17 @@ int main( )
         // Add inclination to list if below definition boundary
         if ( angle < 180.0 )
         {
-            inclinationAngles.push_back( unit_conversions::convertDegreesToRadians( angle ) );
+            inclinationAngles.push_back( convertDegreesToRadians( angle ) );
         }
         else if ( angle == 180.0 )
         {
-            inclinationAngles.push_back( unit_conversions::convertDegreesToRadians( angle ) - 0.001 );
+            inclinationAngles.push_back( convertDegreesToRadians( angle ) - 0.001 );
         }
 
         // Add other angles up to 360 degrees
-        rightAscensionOfAscendingNodeAngles.push_back( unit_conversions::convertDegreesToRadians( angle ) );
-        argumentOfPeriapsisAngles.push_back( unit_conversions::convertDegreesToRadians( angle ) );
-        trueAnomalyAngles.push_back( unit_conversions::convertDegreesToRadians( angle ) );
+        rightAscensionOfAscendingNodeAngles.push_back( convertDegreesToRadians( angle ) );
+        argumentOfPeriapsisAngles.push_back( convertDegreesToRadians( angle ) );
+        trueAnomalyAngles.push_back( convertDegreesToRadians( angle ) );
 
         // Next step
         angle += fullAngleSpectrum ? 15.0 : 360.0;
@@ -173,14 +173,10 @@ int main( )
                         }
                         else
                         {
-                            keplerianElements( inclinationIndex ) =
-                                    unit_conversions::convertDegreesToRadians< double >( 179.9427042204868 );
-                            keplerianElements( longitudeOfAscendingNodeIndex ) =
-                                    unit_conversions::convertDegreesToRadians< double >( 0 );
-                            keplerianElements( argumentOfPeriapsisIndex ) =
-                                    unit_conversions::convertDegreesToRadians< double >( 30 );
-                            keplerianElements( trueAnomalyIndex ) =
-                                    unit_conversions::convertDegreesToRadians< double >( 60 );
+                            keplerianElements( inclinationIndex ) = convertDegreesToRadians< double >( 179.9427042204868 );
+                            keplerianElements( longitudeOfAscendingNodeIndex ) = convertDegreesToRadians< double >( 0 );
+                            keplerianElements( argumentOfPeriapsisIndex ) = convertDegreesToRadians< double >( 30 );
+                            keplerianElements( trueAnomalyIndex ) = convertDegreesToRadians< double >( 60 );
                             std::cout << "Kepler In: " << keplerianElements.transpose( ) << std::endl;
                         }
 
