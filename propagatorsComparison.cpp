@@ -55,7 +55,8 @@ int main( )
     using namespace tudat::ephemerides;
     using namespace tudat::input_output;
     using namespace tudat::aerodynamics;
-    using namespace tudat::root_finders;
+    using namespace tudat::unit_conversions;
+    using namespace tudat::basic_astrodynamics;
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ///////////////////////            DEFINE TEST CASES             //////////////////////////////////////////////////////
@@ -71,65 +72,53 @@ int main( )
     //      1: Full aerobraking
     //      2: Circular orbit at LMO (Low Mars Orbit)
     //      3: Interplanetary trajectory
-    int testCase = 0;
+    int testCase = 1;
     std::vector< string > pathAdditionTestCase = { "aero", "aero_full", "circ", "inter" };
     switch ( testCase )
     {
     case 0: // Single aerobraking sweep
     {
         // Set simulation time settings.
-        simulationDuration = 1.0 * tudat::physical_constants::JULIAN_DAY;
+        simulationDuration = 1.0 * physical_constants::JULIAN_DAY;
         constantTimeStep = 15.0;
 
         // Initial conditions
         SatelliteInitialStateInKeplerianElements( semiMajorAxisIndex ) = 27185000;
         SatelliteInitialStateInKeplerianElements( eccentricityIndex ) = 0.871988;
-        SatelliteInitialStateInKeplerianElements( inclinationIndex ) =
-                unit_conversions::convertDegreesToRadians( 93.0 );
-        SatelliteInitialStateInKeplerianElements( argumentOfPeriapsisIndex ) =
-                unit_conversions::convertDegreesToRadians( 158.7 );
-        SatelliteInitialStateInKeplerianElements( longitudeOfAscendingNodeIndex ) =
-                unit_conversions::convertDegreesToRadians( 23.4 );
-        SatelliteInitialStateInKeplerianElements( trueAnomalyIndex ) =
-                unit_conversions::convertDegreesToRadians( 180.0 );
+        SatelliteInitialStateInKeplerianElements( inclinationIndex ) = convertDegreesToRadians( 93.0 );
+        SatelliteInitialStateInKeplerianElements( argumentOfPeriapsisIndex ) = convertDegreesToRadians( 158.7 );
+        SatelliteInitialStateInKeplerianElements( longitudeOfAscendingNodeIndex ) = convertDegreesToRadians( 23.4 );
+        SatelliteInitialStateInKeplerianElements( trueAnomalyIndex ) = convertDegreesToRadians( 180.0 );
         break;
     }
     case 1: // Full aerobraking
     {
         // Set simulation time settings.
-        simulationDuration = 30.0 * tudat::physical_constants::JULIAN_DAY;
-        constantTimeStep = 100.0;
+        simulationDuration = 150.0 * physical_constants::JULIAN_DAY;
+        constantTimeStep = 150.0;
 
         // Initial conditions
-        SatelliteInitialStateInKeplerianElements( semiMajorAxisIndex ) = 27197250;
-        SatelliteInitialStateInKeplerianElements( eccentricityIndex ) = 0.871366;
-        SatelliteInitialStateInKeplerianElements( inclinationIndex ) =
-                unit_conversions::convertDegreesToRadians( 93.0 );
-        SatelliteInitialStateInKeplerianElements( argumentOfPeriapsisIndex ) =
-                unit_conversions::convertDegreesToRadians( 158.7 );
-        SatelliteInitialStateInKeplerianElements( longitudeOfAscendingNodeIndex ) =
-                unit_conversions::convertDegreesToRadians( 23.4 );
-        SatelliteInitialStateInKeplerianElements( trueAnomalyIndex ) =
-                unit_conversions::convertDegreesToRadians( 180.0 );
+        SatelliteInitialStateInKeplerianElements( semiMajorAxisIndex ) = 27198500;
+        SatelliteInitialStateInKeplerianElements( eccentricityIndex ) = 0.871280;
+        SatelliteInitialStateInKeplerianElements( inclinationIndex ) = convertDegreesToRadians( 93.0 );
+        SatelliteInitialStateInKeplerianElements( argumentOfPeriapsisIndex ) = convertDegreesToRadians( 158.7 );
+        SatelliteInitialStateInKeplerianElements( longitudeOfAscendingNodeIndex ) = convertDegreesToRadians( 23.4 );
+        SatelliteInitialStateInKeplerianElements( trueAnomalyIndex ) = convertDegreesToRadians( 180.0 );
         break;
     }
     case 2: // Circular orbit at LMO
     {
         // Set simulation time settings.
-        simulationDuration = 27.5 * tudat::physical_constants::JULIAN_DAY;
+        simulationDuration = 27.5 * physical_constants::JULIAN_DAY;
         constantTimeStep = 25.0;
 
         // Initial conditions
         SatelliteInitialStateInKeplerianElements( semiMajorAxisIndex ) = 3621000;
         SatelliteInitialStateInKeplerianElements( eccentricityIndex ) = 0.006904;
-        SatelliteInitialStateInKeplerianElements( inclinationIndex ) =
-                unit_conversions::convertDegreesToRadians( 93.0 );
-        SatelliteInitialStateInKeplerianElements( argumentOfPeriapsisIndex ) =
-                unit_conversions::convertDegreesToRadians( 158.7 );
-        SatelliteInitialStateInKeplerianElements( longitudeOfAscendingNodeIndex ) =
-                unit_conversions::convertDegreesToRadians( 23.4 );
-        SatelliteInitialStateInKeplerianElements( trueAnomalyIndex ) =
-                unit_conversions::convertDegreesToRadians( 180.0 );
+        SatelliteInitialStateInKeplerianElements( inclinationIndex ) = convertDegreesToRadians( 93.0 );
+        SatelliteInitialStateInKeplerianElements( argumentOfPeriapsisIndex ) = convertDegreesToRadians( 158.7 );
+        SatelliteInitialStateInKeplerianElements( longitudeOfAscendingNodeIndex ) = convertDegreesToRadians( 23.4 );
+        SatelliteInitialStateInKeplerianElements( trueAnomalyIndex ) = convertDegreesToRadians( 180.0 );
         break;
     }
     case 3: // Interplanetary trajectory
@@ -147,13 +136,13 @@ int main( )
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     // Load Spice kernels.
-    spice_interface::loadSpiceKernelInTudat( input_output::getSpiceKernelPath( ) + "pck00009.tpc" );
-    spice_interface::loadSpiceKernelInTudat( input_output::getSpiceKernelPath( ) + "de-403-masses.tpc" );
-    spice_interface::loadSpiceKernelInTudat( input_output::getSpiceKernelPath( ) + "de421.bsp" );
+    spice_interface::loadSpiceKernelInTudat( getSpiceKernelPath( ) + "pck00009.tpc" );
+    spice_interface::loadSpiceKernelInTudat( getSpiceKernelPath( ) + "de-403-masses.tpc" );
+    spice_interface::loadSpiceKernelInTudat( getSpiceKernelPath( ) + "de421.bsp" );
 
     // Set simulation time settings.
-    const double simulationStartEpoch = 7.0 * tudat::physical_constants::JULIAN_YEAR +
-            30.0 * 6.0 * tudat::physical_constants::JULIAN_DAY;
+    const double simulationStartEpoch = 7.0 * physical_constants::JULIAN_YEAR +
+            30.0 * 6.0 * physical_constants::JULIAN_DAY;
     const double simulationEndEpoch = simulationDuration + simulationStartEpoch;
 
     // Define body settings for simulation.
@@ -185,14 +174,19 @@ int main( )
 
     // Tabulated atmosphere settings
     std::map< int, std::string > tabulatedAtmosphereFiles;
-    tabulatedAtmosphereFiles[ 0 ] = input_output::getAtmosphereTablesPath( ) +
+    tabulatedAtmosphereFiles[ 0 ] = getAtmosphereTablesPath( ) +
             "MCDMeanAtmosphereTimeAverage/density.dat";
-    tabulatedAtmosphereFiles[ 1 ] = input_output::getAtmosphereTablesPath( ) +
+    tabulatedAtmosphereFiles[ 1 ] = getAtmosphereTablesPath( ) +
             "MCDMeanAtmosphereTimeAverage/pressure.dat";
-    tabulatedAtmosphereFiles[ 2 ] = input_output::getAtmosphereTablesPath( ) +
+    tabulatedAtmosphereFiles[ 2 ] = getAtmosphereTablesPath( ) +
             "MCDMeanAtmosphereTimeAverage/temperature.dat";
+    tabulatedAtmosphereFiles[ 3 ] = getAtmosphereTablesPath( ) +
+            "MCDMeanAtmosphereTimeAverage/gasConstant.dat";
+    tabulatedAtmosphereFiles[ 4 ] = getAtmosphereTablesPath( ) +
+            "MCDMeanAtmosphereTimeAverage/specificHeatRatio.dat";
     std::vector< AtmosphereDependentVariables > atmosphereDependentVariables = {
-        density_dependent_atmosphere, pressure_dependent_atmosphere, temperature_dependent_atmosphere };
+        density_dependent_atmosphere, pressure_dependent_atmosphere, temperature_dependent_atmosphere,
+        gas_constant_dependent_atmosphere, specific_heat_ratio_dependent_atmosphere };
     std::vector< AtmosphereIndependentVariables > atmosphereIndependentVariables = {
         longitude_dependent_atmosphere, latitude_dependent_atmosphere, altitude_dependent_atmosphere };
 
@@ -235,6 +229,10 @@ int main( )
                 aerodynamicCoefficientFiles, referenceAreaAerodynamic,
                 boost::assign::list_of( aerodynamics::angle_of_attack_dependent )( aerodynamics::altitude_dependent ),
                 true, true );
+//    double aerodynamicCoefficient = 2.2;
+//    boost::shared_ptr< AerodynamicCoefficientSettings > aerodynamicCoefficientSettings =
+//            boost::make_shared< ConstantAerodynamicCoefficientSettings >(
+//                referenceAreaAerodynamic, aerodynamicCoefficient * Eigen::Vector3d::UnitX( ), true, true );
 
     bodyMap[ "Satellite" ]->setAerodynamicCoefficientInterface(
                 createAerodynamicCoefficientInterface( aerodynamicCoefficientSettings, "Satellite" ) );
@@ -270,8 +268,7 @@ int main( )
     std::map< std::string, std::vector< boost::shared_ptr< AccelerationSettings > > > accelerationsOfSatellite;
     if ( keplerOrbit )
     {
-        accelerationsOfSatellite[ "Mars" ].push_back( boost::make_shared< AccelerationSettings >(
-                                                          basic_astrodynamics::central_gravity ) );
+        accelerationsOfSatellite[ "Mars" ].push_back( boost::make_shared< AccelerationSettings >( central_gravity ) );
     }
     else
     {
@@ -280,15 +277,12 @@ int main( )
         {
             if ( i != 1 )
             {
-                accelerationsOfSatellite[ bodiesToCreate.at( i ) ].push_back( boost::make_shared< AccelerationSettings >(
-                                                                                  basic_astrodynamics::central_gravity ) );
+                accelerationsOfSatellite[ bodiesToCreate.at( i ) ].push_back( boost::make_shared< AccelerationSettings >( central_gravity ) );
             }
         }
-        accelerationsOfSatellite[ "Sun" ].push_back( boost::make_shared< AccelerationSettings >(
-                                                         basic_astrodynamics::cannon_ball_radiation_pressure ) );
+        accelerationsOfSatellite[ "Sun" ].push_back( boost::make_shared< AccelerationSettings >( cannon_ball_radiation_pressure ) );
 
-        accelerationsOfSatellite[ "Mars" ].push_back( boost::make_shared< AccelerationSettings >(
-                                                          basic_astrodynamics::aerodynamic ) );
+        accelerationsOfSatellite[ "Mars" ].push_back( boost::make_shared< AccelerationSettings >( aerodynamic ) );
     }
 
     // Add acceleration information
@@ -296,7 +290,7 @@ int main( )
     bodiesToPropagate.push_back( "Satellite" );
     centralBodies.push_back( "Mars" );
 
-    basic_astrodynamics::AccelerationMap accelerationModelMap = createAccelerationModelsMap(
+    AccelerationMap accelerationModelMap = createAccelerationModelsMap(
                 bodyMap, accelerationMap, bodiesToPropagate, centralBodies );
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -356,7 +350,7 @@ int main( )
             {
                 translationalPropagatorType = unified_state_model_exponential_map;
             }
-            else
+            else if ( propagatorType == 6 )
             {
                 translationalPropagatorType = cowell;
             }
@@ -448,43 +442,43 @@ int main( )
             }
 
             // Write perturbed satellite propagation history to file.
-            input_output::writeDataMapToTextFile( functionEvaluationsMap,
-                                                  "eval" + nameAdditionPropagator[ propagatorType ] +
-                                                  nameAdditionIntegrator[ integratorType ] + ".dat",
-                                                  getOutputPath( "Propagators/" + pathAdditionTestCase[ testCase ] ),
-                                                  "",
-                                                  std::numeric_limits< double >::digits10,
-                                                  std::numeric_limits< double >::digits10,
-                                                  "," );
+            writeDataMapToTextFile( functionEvaluationsMap,
+                                    "eval" + nameAdditionPropagator[ propagatorType ] +
+                                    nameAdditionIntegrator[ integratorType ] + ".dat",
+                                    getOutputPath( "Propagators/" + pathAdditionTestCase[ testCase ] ),
+                                    "",
+                                    std::numeric_limits< double >::digits10,
+                                    std::numeric_limits< double >::digits10,
+                                    "," );
 
-            input_output::writeDataMapToTextFile( cartesianIntegrationResult,
-                                                  "trajectory" + nameAdditionPropagator[ propagatorType ] +
-                                                  nameAdditionIntegrator[ integratorType ] + ".dat",
-                                                  getOutputPath( "Propagators/" + pathAdditionTestCase[ testCase ] ),
-                                                  "",
-                                                  std::numeric_limits< double >::digits10,
-                                                  std::numeric_limits< double >::digits10,
-                                                  "," );
+            writeDataMapToTextFile( cartesianIntegrationResult,
+                                    "trajectory" + nameAdditionPropagator[ propagatorType ] +
+                                    nameAdditionIntegrator[ integratorType ] + ".dat",
+                                    getOutputPath( "Propagators/" + pathAdditionTestCase[ testCase ] ),
+                                    "",
+                                    std::numeric_limits< double >::digits10,
+                                    std::numeric_limits< double >::digits10,
+                                    "," );
 
-            input_output::writeDataMapToTextFile( keplerianIntegrationResult,
-                                                  "orbit" + nameAdditionPropagator[ propagatorType ] +
-                                                  nameAdditionIntegrator[ integratorType ] + ".dat",
-                                                  getOutputPath( "Propagators/" + pathAdditionTestCase[ testCase ] ),
-                                                  "",
-                                                  std::numeric_limits< double >::digits10,
-                                                  std::numeric_limits< double >::digits10,
-                                                  "," );
+            writeDataMapToTextFile( keplerianIntegrationResult,
+                                    "orbit" + nameAdditionPropagator[ propagatorType ] +
+                                    nameAdditionIntegrator[ integratorType ] + ".dat",
+                                    getOutputPath( "Propagators/" + pathAdditionTestCase[ testCase ] ),
+                                    "",
+                                    std::numeric_limits< double >::digits10,
+                                    std::numeric_limits< double >::digits10,
+                                    "," );
 
             if ( propagatorType > 2 && propagatorType < 6 )
             {
-                input_output::writeDataMapToTextFile( usmIntegrationResult,
-                                                      "usm" + nameAdditionPropagator[ propagatorType ] +
-                                                      nameAdditionIntegrator[ integratorType ] + ".dat",
-                                                      getOutputPath( "Propagators/" + pathAdditionTestCase[ testCase ] ),
-                                                      "",
-                                                      std::numeric_limits< double >::digits10,
-                                                      std::numeric_limits< double >::digits10,
-                                                      "," );
+                writeDataMapToTextFile( usmIntegrationResult,
+                                        "usm" + nameAdditionPropagator[ propagatorType ] +
+                                        nameAdditionIntegrator[ integratorType ] + ".dat",
+                                        getOutputPath( "Propagators/" + pathAdditionTestCase[ testCase ] ),
+                                        "",
+                                        std::numeric_limits< double >::digits10,
+                                        std::numeric_limits< double >::digits10,
+                                        "," );
             }
         }
     }

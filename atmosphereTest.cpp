@@ -37,16 +37,16 @@ int main( )
         // Select case
         //      0: 1-D: corner conditions, IND: nominal order, DEP: nominal order
         //      1: 1-D: interpolated conditions, IND: nominal order, DEP: nominal order
-        //      2: 1-D: corner conditions, IND: nominal order, DEP: shuffled order
+        //      2: 1-D: corner conditions, IND: shuffled order, DEP: shuffled order
         //      3: 3-D: corner conditions, IND: shuffled order, DEP: nominal order
         //      4: 3-D: non-interpolated conditions, IND: shuffled order, DEP: shuffled order
         //      5: 3-D: interpolated conditions, IND: shuffled order, DEP: nominal order
-        const int testCase = 5;
+        const int testCase = 2;
         std::cout << "Test Case < " << testCase << " > Selected" << std::endl;
         std::cout << "Tolerance is set at: " << tolerance << std::endl << std::endl;
         switch ( testCase )
         {
-        case 0: // 1-D: 0 km altitude, IND: nominal order, DEP: nominal order
+        case 0: // 1-D: corner conditions, IND: nominal order, DEP: nominal order
         {
             // Create a tabulated atmosphere object.
             std::map< int, std::string > tabulatedAtmosphereFiles = { { 0, input_output::getAtmosphereTablesPath( ) +
@@ -82,24 +82,39 @@ int main( )
             temperatureOutput = tabulatedAtmosphere.getTemperature( altitudeInput );
             break;
         }
-        case 2: // 1-D: 0 km altitude, IND: nominal order, DEP: shuffled order
+        case 2: // 1-D: corner conditions, IND: shuffled order, DEP: shuffled order
         {
             // Create a tabulated atmosphere object.
             std::map< int, std::string > tabulatedAtmosphereFiles = { { 0, input_output::getAtmosphereTablesPath( ) +
-                                                                        "USSA1976Until100kmPer100mUntil1000kmPer1000m.dat" } };
+                                                                        "MCDMeanAtmosphere.dat" } };
             std::vector< AtmosphereDependentVariables > dependentVariables = {
-                temperature_dependent_atmosphere, density_dependent_atmosphere, pressure_dependent_atmosphere };
-            TabulatedAtmosphere tabulatedAtmosphere( tabulatedAtmosphereFiles, dependentVariables );
+                pressure_dependent_atmosphere, specific_heat_ratio_dependent_atmosphere, gas_constant_dependent_atmosphere,
+                temperature_dependent_atmosphere, density_dependent_atmosphere };
+            std::vector< AtmosphereIndependentVariables > independentVariables = { latitude_dependent_atmosphere };
+            TabulatedAtmosphere tabulatedAtmosphere( tabulatedAtmosphereFiles, dependentVariables, independentVariables );
 
             // Declare input and output
-            altitudeInput = 0.0;
-            densityInput = 101320.0;
-            pressureInput = 288.15;
-            temperatureInput = 1.225;
+            latitudeInput = 5.0e4;
+            densityInput = 1.4331262554e+00;
+            pressureInput = 7.6178752157e-05;
+            temperatureInput = 2.0951356051e+02;
+            double gasConstantInput = 1.6104994141e+02;
+            double ratioSpecificHeatInput = 2.3477457225e+00;
+            double soundSpeedInput = 281.456889155598;
 
-            densityOutput = tabulatedAtmosphere.getDensity( altitudeInput );
-            pressureOutput = tabulatedAtmosphere.getPressure( altitudeInput );
-            temperatureOutput = tabulatedAtmosphere.getTemperature( altitudeInput );
+            densityOutput = tabulatedAtmosphere.getDensity( 0.0, 0.0, latitudeInput );
+            pressureOutput = tabulatedAtmosphere.getPressure( 0.0, 0.0, latitudeInput );
+            temperatureOutput = tabulatedAtmosphere.getTemperature( 0.0, 0.0, latitudeInput );
+            double gasConstantOutput = tabulatedAtmosphere.getSpecificGasConstant( 0.0, 0.0, latitudeInput );
+            double ratioSpecificHeatOutput = tabulatedAtmosphere.getRatioOfSpecificHeats( 0.0, 0.0, latitudeInput );
+            double soundSpeedOutput = tabulatedAtmosphere.getSpeedOfSound( 0.0, 0.0, latitudeInput );
+
+            std::cout << "Gas Constant Output: " << gasConstantOutput << " J/kg/K" << std::endl;
+            std::cout << "Difference Gas Constant: " << gasConstantOutput - gasConstantInput << " J/kg/K" << std::endl << std::endl;
+            std::cout << "Specific Heat Ratio Output: " << ratioSpecificHeatOutput << std::endl;
+            std::cout << "Difference Specific Heat Ratio: " << ratioSpecificHeatOutput - ratioSpecificHeatInput << std::endl << std::endl;
+            std::cout << "Speed Of Sound Output: " << soundSpeedOutput << " m/s" << std::endl;
+            std::cout << "Difference Speed Of Sound: " << soundSpeedOutput - soundSpeedInput << " m/s" << std::endl << std::endl;
             break;
         }
         case 3: // 3-D: corner conditions, IND: shuffled order, DEP: nominal order
@@ -257,7 +272,14 @@ int main( )
         std::cout << "2nd Value: " << multiArrayFromFile[ 2 ][ 4 ][ 1 ][ 1 ] << ", Exp: -0.002" << std::endl;
         std::cout << "3rd Value: " << multiArrayFromFile[ 2 ][ 6 ][ 1 ][ 1 ] << ", Exp: -0.008" << std::endl;
         std::cout << "4th Value: " << multiArrayFromFile[ 1 ][ 3 ][ 3 ][ 1 ] << ", Exp: 0.0028" << std::endl;
-        std::cout << "5th Value: " << multiArrayFromFile[ 9 ][ 6 ][ 4 ][ 1 ] << ", Exp: 0.2949" << std::endl;
+        if ( fileType == 0 )
+        {
+            std::cout << "5th Value: " << multiArrayFromFile[ 9 ][ 6 ][ 4 ][ 1 ] << ", Exp: 0.2949" << std::endl;
+        }
+        else
+        {
+            std::cout << "5th Value: " << multiArrayFromFile[ 9 ][ 6 ][ 4 ][ 1 ] << ", Exp: 0.3949" << std::endl;
+        }
         break;
     }
     }

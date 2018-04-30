@@ -88,8 +88,13 @@ int main( )
             "MCDMeanAtmosphereTimeAverage/pressure.dat";
     tabulatedAtmosphereFiles[ 2 ] = input_output::getAtmosphereTablesPath( ) +
             "MCDMeanAtmosphereTimeAverage/temperature.dat";
+    tabulatedAtmosphereFiles[ 3 ] = input_output::getAtmosphereTablesPath( ) +
+            "MCDMeanAtmosphereTimeAverage/gasConstant.dat";
+    tabulatedAtmosphereFiles[ 4 ] = input_output::getAtmosphereTablesPath( ) +
+            "MCDMeanAtmosphereTimeAverage/specificHeatRatio.dat";
     std::vector< AtmosphereDependentVariables > atmosphereDependentVariables = {
-        density_dependent_atmosphere, pressure_dependent_atmosphere, temperature_dependent_atmosphere };
+        density_dependent_atmosphere, pressure_dependent_atmosphere, temperature_dependent_atmosphere,
+        gas_constant_dependent_atmosphere, specific_heat_ratio_dependent_atmosphere };
     std::vector< AtmosphereIndependentVariables > atmosphereIndependentVariables = {
         longitude_dependent_atmosphere, latitude_dependent_atmosphere, altitude_dependent_atmosphere };
 

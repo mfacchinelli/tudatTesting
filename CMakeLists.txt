@@ -249,5 +249,5 @@ target_link_libraries(application_atmosphereTest tudat_aerodynamics tudat_input_
 # Add SPARTA test
 add_executable(application_spartaTest "${SRCROOT}/spartaTest.cpp")
 setup_executable_target(application_spartaTest "${SRCROOT}")
-target_link_libraries(application_spartaTest tudat_aerodynamics tudat_input_output tudat_interpolators
-    tudat_basic_mathematics tudat_basic_astrodynamics ${Boost_LIBRARIES} )
+target_link_libraries(application_spartaTest tudat_aerodynamics tudat_input_output tudat_basic_mathematics
+    tudat_basic_astrodynamics ${Boost_LIBRARIES} )
