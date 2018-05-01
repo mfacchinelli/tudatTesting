@@ -10,15 +10,7 @@
 
 #include <ctime>
 #include <Tudat/SimulationSetup/tudatSimulationHeader.h>
-#include "Tudat/Astrodynamics/Aerodynamics/tabulatedAtmosphere.h"
-
-template< typename T >
-std::string to_string_with_precision( const T a_value, const int n = 3 )
-{
-    std::ostringstream out;
-    out << std::setprecision( n ) << std::fixed << a_value;
-    return out.str( );
-}
+#include "Tudat/Astrodynamics/Aerodynamics/atmosphereModel.h"
 
 //! Execute propagation of orbit of Satellite around the Earth.
 int main( )
@@ -47,37 +39,38 @@ int main( )
     /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     // Define inputs
-    std::string SPARTAExecutable = "'/Users/Michele/AE Software/SPARTA/src/spa_mac_mpi'";
-    int numberOfCores = 2;
-    std::string geometryFileUser = getSPARTADataPath( ) + "data.sphere"; // check that it is not called data.shape
-    TabulatedAtmosphere tabulatedAtmosphere( tabulatedAtmosphereFile, dependentVariables  );
-    std::vector< double > simulationAltitudes = { 100e3, 125e3, 150e3, 200e3, 300e3, 500e3 };
-    int referenceAxis = + 0; // axis opposite to free stream velocity and where reference aerodynamic area is taken
-    std::string simulationGases = "CO2 H O"; // check that it matches gases in SPARTA atmosphere
-    double atmosphereTemperature = 200;
-    double wallTemperature = 300;
-    double accomodationCoefficient = 1.0;
+    const std::string SPARTAExecutable = "'/Users/Michele/AE Software/SPARTA/src/spa_mac_mpi'";
+    const int numberOfCores = 2;
+    const std::string geometryFileUser_ = getSPARTADataPath( ) + "data.sphere"; // check that it is not called data.shape
+    const TabulatedAtmosphere atmosphereModel( tabulatedAtmosphereFile, dependentVariables  );
+    const std::vector< double > simulationAltitudes = { 100e3 };//{ 100e3, 125e3, 150e3, 200e3, 300e3, 500e3 };
+    const int referenceAxis_ = + 0; // axis opposite to free stream velocity and where reference aerodynamic area is taken
+    const Eigen::Vector3d momentReferencePoint = Eigen::Vector3d::Zero( );
+    const std::string simulationGases_ = "CO2 H O"; // check that it matches gases in SPARTA atmosphere
+    const double wallTemperature_ = 300;
+    const double accomodationCoefficient_ = 1.0;
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////
     ///////////////////////            INTERNAL VARIABLES            ////////////////////////////////////////
     /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     // Define internal files and paths
-    std::string outputDirectory = "results";
-    std::string outputPath = getSPARTADataPath( ) + outputDirectory;
-    std::string inputFile = getSPARTADataPath( )  + "in.sparta";
-    std::string inputFileTemplate = getSPARTADataPath( )  + "SPARTAInputTemplate.txt";
-    std::string geometryFileInternal = getSPARTADataPath( ) + "data.shape";
+    std::string outputDirectory_ = "results";
+    std::string outputPath_ = getSPARTADataPath( ) + outputDirectory_;
+    std::string inputFile_ = getSPARTADataPath( )  + "in.sparta";
+    std::string inputFileTemplate_ = getSPARTADataPath( )  + "SPARTAInputTemplate.txt";
+    std::string geometryFileInternal_ = getSPARTADataPath( ) + "data.shape";
     std::string atmosphereSpeciesFile = getSPARTADataPath( ) + "atmosphere.species";
     std::string atmosphereCollisionModelFile = getSPARTADataPath( ) + "atmosphere.vss";
 
     // Define simulation variables
-    double gridSpacing = 0.25;
-    double simulatedParticlesPerCell = 15;
+    double gridSpacing_ = 0.25;
+    double simulatedParticlesPerCell_ = 15;
     std::vector< double > simulationAnglesOfAttack = { -75.0, -60.0, -45.0, -30.0, -25.0, -20.0, -15.0, -10.0, -5.0,
                                                        0.0, 5.0, 10.0, 15.0, 20.0, 25.0, 30.0, 45.0, 60.0, 75.0 };
     std::vector< double > simulationAnglesOfSideslip = { 0.0 };
-    std::vector< double > simulationMolecularSpeedRatios = { 1.0, 2.5, 5.0, 10.0, 25.0, 50.0, 100.0 };
+    std::vector< double > simulationMolecularSpeedRatios = { 1.0 };
+//    { 1.0, 2.5, 5.0, 10.0, 25.0, 50.0, 100.0 };
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////
     ///////////////////////            READ SHAPE FILE               ////////////////////////////////////////
@@ -86,19 +79,18 @@ int main( )
     // Extract simulation box data from shape file
 
     // Initialize output vectors
-    Eigen::Matrix< double, Eigen::Dynamic, 3 > shapePoints;
-    Eigen::Matrix< int, Eigen::Dynamic, 3 > shapeTriangles;
-    int numberOfPoints = 0;
-    int numberOfTriangles = 0;
-
+    Eigen::Matrix< double, Eigen::Dynamic, 3 > shapePoints_;
+    Eigen::Matrix< int, Eigen::Dynamic, 3 > shapeTriangles_;
+    int numberOfPoints_ = 0;
+    int numberOfTriangles_ = 0;
     {
         // Open file and create file stream.
-        std::fstream stream( geometryFileUser.c_str( ), std::ios::in );
+        std::fstream stream( geometryFileUser_.c_str( ), std::ios::in );
 
         // Check if file opened correctly.
         if ( stream.fail( ) )
         {
-            throw std::runtime_error( "Data file could not be opened: " + geometryFileUser );
+            throw std::runtime_error( "Data file could not be opened: " + geometryFileUser_ );
         }
 
         // Initialize booleans that specifies once parts of file have been passed.
@@ -137,7 +129,7 @@ int main( )
                     {
                         throw std::runtime_error( "Error when reading multi-array, expected number of points." );
                     }
-                    numberOfPoints = std::stoi( vectorOfIndividualStrings.at( 0 ) );
+                    numberOfPoints_ = std::stoi( vectorOfIndividualStrings.at( 0 ) );
                     isNumberOfPointsPassed = true;
                 }
                 // If this is the first line that is read, it should contain the number of triangles
@@ -147,7 +139,7 @@ int main( )
                     {
                         throw std::runtime_error( "Error when reading multi-array, expected number of triangles." );
                     }
-                    numberOfTriangles = std::stoi( vectorOfIndividualStrings.at( 0 ) );
+                    numberOfTriangles_ = std::stoi( vectorOfIndividualStrings.at( 0 ) );
                     isNumberOfTrianglesPassed = true;
                 }
                 else if ( !isListOfPointsPassed )
@@ -167,13 +159,13 @@ int main( )
                             // Parse data from current line into output matrix.
                             for ( unsigned int i = 0; i < ( vectorOfIndividualStrings.size( ) - 1 ); i++ )
                             {
-                                shapePoints( numberOfPointsParsed, i ) = std::stod( vectorOfIndividualStrings.at( i + 1 ) );
+                                shapePoints_( numberOfPointsParsed, i ) = std::stod( vectorOfIndividualStrings.at( i + 1 ) );
                             }
                             numberOfPointsParsed++;
                         }
                     }
 
-                    if ( numberOfPointsParsed == numberOfPoints )
+                    if ( numberOfPointsParsed == numberOfPoints_ )
                     {
                         isListOfPointsPassed = true;
                     }
@@ -195,13 +187,13 @@ int main( )
                             // Parse data from current line into output matrix.
                             for ( unsigned int i = 0; i < ( vectorOfIndividualStrings.size( ) - 1 ); i++ )
                             {
-                                shapeTriangles( numberOfTrianglesParsed, i ) = std::stod( vectorOfIndividualStrings.at( i + 1 ) );
+                                shapeTriangles_( numberOfTrianglesParsed, i ) = std::stod( vectorOfIndividualStrings.at( i + 1 ) );
                             }
                             numberOfTrianglesParsed++;
                         }
                     }
 
-                    if ( numberOfTrianglesParsed > numberOfTriangles )
+                    if ( numberOfTrianglesParsed > numberOfTriangles_ )
                     {
                         throw std::runtime_error( "Number of triangles in file does not match file header." );
                     }
@@ -211,15 +203,15 @@ int main( )
                 if ( isNumberOfPointsPassed && isNumberOfTrianglesPassed )
                 {
                     // Check input consistency
-                    if ( ( numberOfPoints == 0 ) || ( numberOfTriangles == 0 ) )
+                    if ( ( numberOfPoints_ == 0 ) || ( numberOfTriangles_ == 0 ) )
                     {
                         throw std::runtime_error( "Error when reading shape file, expected to find a non-zero number of points and triangles." );
                     }
                     else
                     {
                         // Define size of output vectors
-                        shapePoints.resize( numberOfPoints, 3 );
-                        shapeTriangles.resize( numberOfTriangles, 3 );
+                        shapePoints_.resize( numberOfPoints_, 3 );
+                        shapeTriangles_.resize( numberOfTriangles_, 3 );
                     }
                 }
             }
@@ -227,59 +219,71 @@ int main( )
     }
 
     // Get maximum and minimum values in each dimension
-    Eigen::Vector3d maximumDimensions = shapePoints.colwise( ).maxCoeff( );
-    Eigen::Vector3d minimumDimensions = shapePoints.colwise( ).minCoeff( );
-    maximumDimensions += 0.5 * maximumDimensions; // add extra space around shape
-    minimumDimensions += 0.5 * minimumDimensions; // add extra space around shape
+    Eigen::Vector3d maximumDimensions_ = shapePoints_.colwise( ).maxCoeff( );
+    Eigen::Vector3d minimumDimensions_ = shapePoints_.colwise( ).minCoeff( );
+    maximumDimensions_ += 0.5 * maximumDimensions_; // add extra space around shape
+    minimumDimensions_ += 0.5 * minimumDimensions_; // add extra space around shape
 
-    // Compute normal to surface elements, area of surface elements and cross-sectional area
-    Eigen::Matrix< double, Eigen::Dynamic, 3 > elementSurfaceNormal;
-    Eigen::Matrix< double, Eigen::Dynamic, 1 > elementSurfaceArea;
-    Eigen::Vector3d shapeCrossSectionalArea;
-    elementSurfaceNormal.resize( numberOfTriangles, 3 );
-    elementSurfaceArea.resize( numberOfTriangles, 3 );
+    // Compute normal to surface elements, area of surface elements and moment arm values
+    Eigen::Matrix< double, 3, Eigen::Dynamic > elementSurfaceNormal;
+    Eigen::Matrix< double, 1, Eigen::Dynamic > elementSurfaceArea;
+    Eigen::Matrix< double, 3, Eigen::Dynamic > elementMomentArm;
+    elementSurfaceNormal.resize( 3, numberOfTriangles_ );
+    elementSurfaceArea.resize( 1, numberOfTriangles_ );
+    elementMomentArm.resize( 3, numberOfTriangles_ );
     Eigen::Matrix3d currentVertices;
     Eigen::Vector3d currentNormal;
+    Eigen::Vector3d currentCentroid;
     double currentNormalNorm;
-    for ( int i = 0; i < numberOfTriangles; i++ )
+    for ( int i = 0; i < numberOfTriangles_; i++ )
     {
+        // Compute properties of current surface element
         for ( unsigned int j = 0; j < 3; j++ )
         {
-            currentVertices.row( j ) = shapePoints.row( shapeTriangles( i, j ) - 1 );
+            currentVertices.row( j ) = shapePoints_.row( shapeTriangles_( i, j ) - 1 );
         }
         currentNormal = ( currentVertices.row( 1 ) - currentVertices.row( 0 ) ).cross(
                     currentVertices.row( 2 ) - currentVertices.row( 0 ) );
         currentNormalNorm = currentNormal.norm( );
+        currentCentroid = currentVertices.colwise( ).sum( ) / 3.0;
+
+        // Find normal, area and distance to reference point
+        elementSurfaceNormal.col( i ) = currentNormal / currentNormalNorm;
         elementSurfaceArea( i ) = 0.5 * currentNormalNorm;
-        elementSurfaceNormal.row( i ) = currentNormal / currentNormalNorm;
+        elementMomentArm.col( i ) = currentCentroid - momentReferencePoint;
     }
+
+    // Compute cross-sectional area
+    Eigen::Vector3d shapeCrossSectionalArea;
     for ( unsigned int i = 0; i < 3; i++ )
     {
         shapeCrossSectionalArea( i ) =
-                0.5 * elementSurfaceNormal.col( i ).cwiseAbs( ).transpose( ).dot( elementSurfaceArea );
+                0.5 * elementSurfaceNormal.row( i ).cwiseAbs( ).dot( elementSurfaceArea );
     }
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////
     ///////////////////////            EXTRACT ATMOSPHERE CONDITIONS ////////////////////////////////////////
     /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    // Extract atmosphere conditions (turn into enum)
+    // Extract atmosphere conditions (turn into enum or struct?)
     //      0 - density
-    //      1 - temperature
-    //      2 - gas constant
-    //      3 - molar mass
-    //      4 - number density
-    std::vector< std::vector< double > > atmosphericConditions;
-    atmosphericConditions.resize( 5 );
+    //      1 - pressure
+    //      2 - temperature
+    //      3 - gas constant
+    //      4 - molar mass
+    //      5 - number density
+    std::vector< std::vector< double > > atmosphericConditions_;
+    atmosphericConditions_.resize( 6 );
     for ( unsigned int i = 0; i < simulationAltitudes.size( ); i++ )
     {
-        atmosphericConditions.at( 0 ).push_back( tabulatedAtmosphere.getDensity( simulationAltitudes.at( i ) ) );
-        atmosphericConditions.at( 1 ).push_back( tabulatedAtmosphere.getTemperature( simulationAltitudes.at( i ) ) );
-        atmosphericConditions.at( 2 ).push_back( tabulatedAtmosphere.getSpecificGasConstant( simulationAltitudes.at( i ) ) );
-        atmosphericConditions.at( 3 ).push_back( tudat::physical_constants::MOLAR_GAS_CONSTANT /
-                                                 atmosphericConditions.at( 2 ).at( i ) );
-        atmosphericConditions.at( 4 ).push_back( tudat::physical_constants::AVOGADRO_CONSTANT *
-                                                 atmosphericConditions.at( 0 ).at( i ) / atmosphericConditions.at( 3 ).at( i ) );
+        atmosphericConditions_.at( 0 ).push_back( atmosphereModel.getDensity( simulationAltitudes.at( i ) ) );
+        atmosphericConditions_.at( 1 ).push_back( atmosphereModel.getPressure( simulationAltitudes.at( i ) ) );
+        atmosphericConditions_.at( 2 ).push_back( atmosphereModel.getTemperature( simulationAltitudes.at( i ) ) );
+        atmosphericConditions_.at( 3 ).push_back( atmosphereModel.getSpecificGasConstant( simulationAltitudes.at( i ) ) );
+        atmosphericConditions_.at( 4 ).push_back( tudat::physical_constants::MOLAR_GAS_CONSTANT /
+                                                 atmosphericConditions_.at( 3 ).at( i ) );
+        atmosphericConditions_.at( 5 ).push_back( tudat::physical_constants::AVOGADRO_CONSTANT *
+                                                 atmosphericConditions_.at( 0 ).at( i ) / atmosphericConditions_.at( 4 ).at( i ) );
     }
     // add gases extraction
 
@@ -288,34 +292,34 @@ int main( )
     /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     // Simulation boundary and grid
-    Eigen::Vector6d simulationBoundaries;
+    Eigen::Vector6d simulationBoundaries_;
     for ( unsigned int i = 0; i < 3; i++ )
     {
-        simulationBoundaries( 2 * i ) = minimumDimensions( i );
-        simulationBoundaries( 2 * i + 1 ) = maximumDimensions( i );
+        simulationBoundaries_( 2 * i ) = minimumDimensions_( i );
+        simulationBoundaries_( 2 * i + 1 ) = maximumDimensions_( i );
     }
-    Eigen::Vector3d simulationGrid = ( maximumDimensions - minimumDimensions ) / gridSpacing;
+    Eigen::Vector3d simulationGrid_ = ( maximumDimensions_ - minimumDimensions_ ) / gridSpacing_;
 
     // Convert molecular speed ratio to stream velocity and compute simulation time step and ratio of real to simulated variables
-    Eigen::Matrix< double, Eigen::Dynamic, Eigen::Dynamic > freeStreamVelocities;
-    Eigen::Matrix< double, Eigen::Dynamic, Eigen::Dynamic > simulationTimeStep;
-    Eigen::Matrix< double, Eigen::Dynamic, 1 > ratioOfRealToSimulatedParticles;
-    freeStreamVelocities.resize( simulationAltitudes.size( ), simulationMolecularSpeedRatios.size( ) );
-    simulationTimeStep.resize( simulationAltitudes.size( ), simulationMolecularSpeedRatios.size( ) );
-    ratioOfRealToSimulatedParticles.resize( simulationAltitudes.size( ), 1 );
+    Eigen::Matrix< double, Eigen::Dynamic, Eigen::Dynamic > freeStreamVelocities_;
+    Eigen::Matrix< double, Eigen::Dynamic, Eigen::Dynamic > simulationTimeStep_;
+    Eigen::Matrix< double, Eigen::Dynamic, 1 > ratioOfRealToSimulatedParticles_;
+    freeStreamVelocities_.resize( simulationAltitudes.size( ), simulationMolecularSpeedRatios.size( ) );
+    simulationTimeStep_.resize( simulationAltitudes.size( ), simulationMolecularSpeedRatios.size( ) );
+    ratioOfRealToSimulatedParticles_.resize( simulationAltitudes.size( ), 1 );
     for ( unsigned int h = 0; h < simulationAltitudes.size( ); h++ )
     {
         for ( unsigned int s = 0; s < simulationMolecularSpeedRatios.size( ); s++ )
         {
-            freeStreamVelocities( h, s ) = simulationMolecularSpeedRatios.at( s ) * std::sqrt(
-                        2.0 * atmosphericConditions.at( 2 ).at( h ) * atmosphericConditions.at( 1 ).at( h ) );
-            simulationTimeStep( h, s ) = 0.1 * ( maximumDimensions( std::abs( referenceAxis ) ) -
-                                                 minimumDimensions( std::abs( referenceAxis ) ) ) /
-                    freeStreamVelocities( h, s );
+            freeStreamVelocities_( h, s ) = simulationMolecularSpeedRatios.at( s ) * std::sqrt(
+                        2.0 * atmosphericConditions_.at( 3 ).at( h ) * atmosphericConditions_.at( 2 ).at( h ) );
+            simulationTimeStep_( h, s ) = 0.1 * ( maximumDimensions_( std::abs( referenceAxis_ ) ) -
+                                                 minimumDimensions_( std::abs( referenceAxis_ ) ) ) /
+                    freeStreamVelocities_( h, s );
             // time step is taken as time it takes for a particle to travel for 10 % of the box
         }
-        ratioOfRealToSimulatedParticles( h ) = atmosphericConditions.at( 4 ).at( h ) *
-                std::pow( gridSpacing, 3 ) / simulatedParticlesPerCell;
+        ratioOfRealToSimulatedParticles_( h ) = atmosphericConditions_.at( 5 ).at( h ) *
+                std::pow( gridSpacing_, 3 ) / simulatedParticlesPerCell_;
     }
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -323,16 +327,16 @@ int main( )
     /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     // Initialize output variable
-    std::string inputTemplate;
+    std::string inputTemplate_;
 
     // Open file and create file stream.
     {
-        std::fstream stream( inputFileTemplate.c_str( ), std::ios::in );
+        std::fstream stream( inputFileTemplate_.c_str( ), std::ios::in );
 
         // Check if file opened correctly.
         if ( stream.fail( ) )
         {
-            throw std::runtime_error( "Data file could not be opened: " + inputFileTemplate );
+            throw std::runtime_error( "Data file could not be opened: " + inputFileTemplate_ );
         }
 
         // Line based parsing
@@ -357,80 +361,115 @@ int main( )
     }
 
     // Copy input shape file to default name
-    std::string commandString = "cp " + geometryFileUser + " " + geometryFileInternal;
+    std::string commandString = "cp " + geometryFileUser_ + " " + geometryFileInternal_;
     std::system( commandString.c_str( ) );
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////
     ///////////////////////            START SPARTA ANALYSIS         ////////////////////////////////////////
     /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    // Warn user and delete all files
-    std::cout << "Warning in rarefied flow analysis with SPARTA, running the "
-                 "simulation will delete all existing results" << std::endl;
-    commandString = "rm " + outputPath + "/*/*.coeff.*"; // overwrite
-    std::system( commandString.c_str( ) );
-
     // Generate command string for SPARTA
-    std::string runSPARTACommandString = "cd " + getSPARTADataPath( ) + "; " +
+    std::cout << "Initiating SPARTA simulation. This may take a while." << std::endl;
+    std::string runSPARTACommandString = "cd " + getSPARTADataPath( ) + "; echo off; " +
             SPARTAExecutable +
-            " -in " + inputFile;
+            " -in " + inputFile_ + "; echo on";
     // "mpirun -np " + std::to_string( numberOfCores ) + " " +
 
     // Loop over simulation parameters and run SPARTA
+    boost::multi_array< Eigen::Vector6d, 3 > aerodynamicCoefficients_( boost::extents[ simulationAltitudes.size( ) ][
+                simulationMolecularSpeedRatios.size( ) ][ simulationAnglesOfAttack.size( ) ] );
     std::string anglesOfAttack;
     Eigen::Vector3d velocityVector;
-    std::string temporaryOutputDirectory;
     for ( unsigned int h = 0; h < simulationAltitudes.size( ); h++ )
     {
         for ( unsigned int s = 0; s < simulationMolecularSpeedRatios.size( ); s++ )
         {
+            // Get velocity vector
+            velocityVector = Eigen::Vector3d::Zero( );
+            velocityVector( std::abs( referenceAxis_ ) ) = ( std::signbit( referenceAxis_ ) ? 1.0 : -1.0 ) *
+                    freeStreamVelocities_( h, s );
 
+            // Get angles of attack string
+            for ( double a : simulationAnglesOfAttack )
+            {
+                anglesOfAttack += printToStringWithPrecision( a, 0 ) + " ";
+            }
+
+            // Print to file
+            FILE * fileIdentifier = std::fopen( inputFile_.c_str( ), "w" );
+            std::fprintf( fileIdentifier, inputTemplate_.c_str( ), simulationBoundaries_( 0 ), simulationBoundaries_( 1 ),
+                          simulationBoundaries_( 2 ), simulationBoundaries_( 3 ), simulationBoundaries_( 4 ),
+                          simulationBoundaries_( 5 ), simulationGrid_( 0 ), simulationGrid_( 1 ), simulationGrid_( 2 ),
+                          atmosphericConditions_.at( 5 ).at( h ), ratioOfRealToSimulatedParticles_( h ), simulationGases_.c_str( ),
+                          simulationGases_.c_str( ), velocityVector( 0 ), velocityVector( 1 ), velocityVector( 2 ),
+                          simulationGases_.c_str( ), atmosphericConditions_.at( 2 ).at( h ), anglesOfAttack.c_str( ),
+                          wallTemperature_, accomodationCoefficient_, simulationTimeStep_( h, s ), outputDirectory_.c_str( ) );
+            std::fclose( fileIdentifier );
+
+            // Run SPARTA
+            int systemStatus = std::system( runSPARTACommandString.c_str( ) );
+            if ( systemStatus != 0 )
+            {
+                throw std::runtime_error( "Error: SPARTA simulation failed. See the log.sparta file for more details." );
+            }
+
+            /////////////////////////////////////////////////////////////////////////////////////////////////////////
+            ///////////////////////            PROCESS RESULTS               ////////////////////////////////////////
+            /////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+            // Loop over angles of attack
+            std::string temporaryOutputFile;
+            std::vector< std::string > outputFileExtensions = { ".400", ".600", ".800", ".1000" };
+            Eigen::Matrix< double, Eigen::Dynamic, 7 > outputMatrix;
+            Eigen::Matrix< double, 3, Eigen::Dynamic > meanPressureValues;
+            Eigen::Matrix< double, 3, Eigen::Dynamic > meanShearValues;
+            meanPressureValues.resize( 3, numberOfTriangles_ );
+            meanShearValues.resize( 3, numberOfTriangles_ );
+            for ( unsigned int a = 0; a < simulationAnglesOfAttack.size( ); a++ )
+            {
+                // Get file name
+                temporaryOutputFile = outputPath_ + "/" + printToStringWithPrecision(
+                            simulationAnglesOfAttack.at( a ), 0 ) + ".coeff";
+
+                // Read output files and compute mean pressure and shear force values
+                meanPressureValues.setZero( );
+                meanShearValues.setZero( );
+                for ( unsigned int i = 0; i < outputFileExtensions.size( ); i++ )
+                {
+                    outputMatrix = readMatrixFromFile( temporaryOutputFile + outputFileExtensions.at( i ), "\t ;,", "%", 9 );
+                    for ( unsigned int j = 0; j < 3; j++ )
+                    {
+                        meanPressureValues.row( j ) += outputMatrix.col( j + 1 ).transpose( );
+                        meanShearValues.row( j ) += outputMatrix.col( j + 4 ).transpose( );
+                    }
+               }
+                meanPressureValues /= outputFileExtensions.size( );
+                meanShearValues /= outputFileExtensions.size( );
+
+                // Convert pressure and shear forces to coefficients
+                aerodynamicCoefficients_[ h ][ s ][ a ] = computeAerodynamicCoefficientsFromPressureShear(
+                            meanPressureValues,
+                            meanShearValues,
+                            atmosphericConditions_.at( 0 ).at( h ), // density
+                            freeStreamVelocities_( h, s ),
+                            atmosphericConditions_.at( 1 ).at( h ), // pressure
+                            elementSurfaceNormal,
+                            elementSurfaceArea,
+                            elementMomentArm,
+                            shapeCrossSectionalArea( std::abs( referenceAxis_ ) ) );
+                std::cout << std::endl << "Altitude: " << simulationAltitudes.at( h ) << std::endl
+                          << "Speed Ratio: " << simulationMolecularSpeedRatios.at( s ) << std::endl
+                          << "Angle of Attack: " << simulationAnglesOfAttack.at( a ) << std::endl
+                          << "Coefficients: " << aerodynamicCoefficients_[ h ][ s ][ a ].transpose( ) << std::endl;
+            }
         }
+        std::cout << std::endl;
     }
-    {
-        unsigned int h = 0;
-        unsigned int s = 0;
+    std::cout << "Here." << std::endl;
 
-        // Get velocity vector
-        velocityVector = Eigen::Vector3d::Zero( );
-        velocityVector( std::abs( referenceAxis ) ) = ( std::signbit( referenceAxis ) ? 1.0 : -1.0 ) *
-                freeStreamVelocities( h, s );
-
-        // Get angles of attack string
-        for ( double a : simulationAnglesOfAttack )
-        {
-            anglesOfAttack += to_string_with_precision< double >( a, 2 ) + " ";
-        }
-
-        // Get output directory for these conditions
-        temporaryOutputDirectory = outputDirectory + "/" +
-                to_string_with_precision< double >( simulationAltitudes.at( h ) / 1e3, 0 ) + "/" +
-                to_string_with_precision< double >( simulationMolecularSpeedRatios.at( s ), 0 );
-        std::cout << temporaryOutputDirectory << std::endl;
-
-        // Print to file
-        FILE * fileIdentifier = std::fopen( inputFile.c_str( ), "w" );
-        std::fprintf( fileIdentifier, inputTemplate.c_str( ), simulationBoundaries( 0 ), simulationBoundaries( 1 ),
-                      simulationBoundaries( 2 ), simulationBoundaries( 3 ), simulationBoundaries( 4 ),
-                      simulationBoundaries( 5 ), simulationGrid( 0 ), simulationGrid( 1 ), simulationGrid( 2 ),
-                      atmosphericConditions.at( 4 ).at( h ), ratioOfRealToSimulatedParticles( h ), simulationGases.c_str( ),
-                      simulationGases.c_str( ), velocityVector( 0 ), velocityVector( 1 ), velocityVector( 2 ),
-                      simulationGases.c_str( ), atmosphereTemperature, anglesOfAttack.c_str( ), wallTemperature,
-                      accomodationCoefficient, simulationTimeStep( h, s ), temporaryOutputDirectory.c_str( ) );
-        std::fclose( fileIdentifier );
-
-        // Run SPARTA
-        int systemStatus = std::system( runSPARTACommandString.c_str( ) );
-        if ( systemStatus != 0 )
-        {
-            throw std::runtime_error( "Error: SPARTA simulation failed. See log.sparta for more details." );
-        }
-    }
-
-    /////////////////////////////////////////////////////////////////////////////////////////////////////////
-    ///////////////////////            PROCESS RESULTS               ////////////////////////////////////////
-    /////////////////////////////////////////////////////////////////////////////////////////////////////////
-
+    // Clean up results folder
+    commandString = "rm " + outputPath_ + "/*"; // overwrite
+    std::system( commandString.c_str( ) );
 
     // Final statement.
     // The exit code EXIT_SUCCESS indicates that the program was successfully executed.
