@@ -25,7 +25,7 @@ int main( )
     // Select mode
     //      0: Tabulated atmosphere test
     //      1: Multi-array reader test
-    const int mode = 1;
+    const int mode = 0;
     switch ( mode )
     {
     case 0:
@@ -41,7 +41,7 @@ int main( )
         //      3: 3-D: corner conditions, IND: shuffled order, DEP: nominal order
         //      4: 3-D: non-interpolated conditions, IND: shuffled order, DEP: shuffled order
         //      5: 3-D: interpolated conditions, IND: shuffled order, DEP: nominal order
-        const int testCase = 2;
+        const int testCase = 4;
         std::cout << "Test Case < " << testCase << " > Selected" << std::endl;
         std::cout << "Tolerance is set at: " << tolerance << std::endl << std::endl;
         switch ( testCase )
@@ -153,11 +153,11 @@ int main( )
             // Create a tabulated atmosphere object.
             std::map< int, std::string > tabulatedAtmosphereFiles;
             tabulatedAtmosphereFiles[ 0 ] = input_output::getAtmosphereTablesPath( ) +
-                    "MCDMeanAtmosphereTimeAverage/density.dat";
-            tabulatedAtmosphereFiles[ 1 ] = input_output::getAtmosphereTablesPath( ) +
-                    "MCDMeanAtmosphereTimeAverage/pressure.dat";
-            tabulatedAtmosphereFiles[ 2 ] = input_output::getAtmosphereTablesPath( ) +
                     "MCDMeanAtmosphereTimeAverage/temperature.dat";
+            tabulatedAtmosphereFiles[ 1 ] = input_output::getAtmosphereTablesPath( ) +
+                    "MCDMeanAtmosphereTimeAverage/density.dat";
+            tabulatedAtmosphereFiles[ 2 ] = input_output::getAtmosphereTablesPath( ) +
+                    "MCDMeanAtmosphereTimeAverage/pressure.dat";
 
             std::vector< AtmosphereDependentVariables > dependentVariables = {
                 temperature_dependent_atmosphere, density_dependent_atmosphere, pressure_dependent_atmosphere };
@@ -167,12 +167,12 @@ int main( )
             TabulatedAtmosphere tabulatedAtmosphere( tabulatedAtmosphereFiles, dependentVariables, independentVariables );
 
             // Declare input and output
-            altitudeInput = 3.739610e8;
+            altitudeInput = 6.6202093e5;
             longitudeInput = convertDegreesToRadians( -1.685714e+02 );
             latitudeInput = convertDegreesToRadians( -7.851064e+01 );
-            densityInput = 2.6315275e-12;
-            pressureInput = 204.24225;
-            temperatureInput = 1.486543e-18;
+            densityInput = 2.03357457566921e-15;
+            pressureInput = 2.28335049368378e-09;
+            temperatureInput = 204.242247282833;
 
             densityOutput = tabulatedAtmosphere.getDensity( altitudeInput, longitudeInput, latitudeInput );
             pressureOutput = tabulatedAtmosphere.getPressure( altitudeInput, longitudeInput, latitudeInput );
@@ -189,9 +189,14 @@ int main( )
                     "MCDMeanAtmosphereTimeAverage/pressure.dat";
             tabulatedAtmosphereFiles[ 2 ] = input_output::getAtmosphereTablesPath( ) +
                     "MCDMeanAtmosphereTimeAverage/temperature.dat";
+            tabulatedAtmosphereFiles[ 3 ] = input_output::getAtmosphereTablesPath( ) +
+                    "MCDMeanAtmosphereTimeAverage/gasConstant.dat";
+            tabulatedAtmosphereFiles[ 4 ] = input_output::getAtmosphereTablesPath( ) +
+                    "MCDMeanAtmosphereTimeAverage/specificHeatRatio.dat";
 
             std::vector< AtmosphereDependentVariables > dependentVariables = {
-                density_dependent_atmosphere, pressure_dependent_atmosphere, temperature_dependent_atmosphere };
+                density_dependent_atmosphere, pressure_dependent_atmosphere, temperature_dependent_atmosphere,
+                gas_constant_dependent_atmosphere, specific_heat_ratio_dependent_atmosphere };
             std::vector< AtmosphereIndependentVariables > independentVariables = {
                 longitude_dependent_atmosphere, latitude_dependent_atmosphere, altitude_dependent_atmosphere };
 
@@ -201,13 +206,26 @@ int main( )
             altitudeInput = 236.9862e3;
             longitudeInput = convertDegreesToRadians( 72.98632 );
             latitudeInput = convertDegreesToRadians( -65.9762 );
-            densityInput = 5.57022396263159e-13;
-            pressureInput = 5.08715805228075e-08;
-            temperatureInput = 174.826970929597;
+            densityInput = 5.50931580592416e-13;
+            pressureInput = 5.05339201226489e-08;
+            temperatureInput = 174.82724294922;
+            double gasConstantInput = 388.076687938436;
+            double ratioSpecificHeatInput = 1.50561688237826;
+            double soundSpeedInput = 319.610155078634;
 
             densityOutput = tabulatedAtmosphere.getDensity( altitudeInput, longitudeInput, latitudeInput );
             pressureOutput = tabulatedAtmosphere.getPressure( altitudeInput, longitudeInput, latitudeInput );
             temperatureOutput = tabulatedAtmosphere.getTemperature( altitudeInput, longitudeInput, latitudeInput );
+            double gasConstantOutput = tabulatedAtmosphere.getSpecificGasConstant( altitudeInput, longitudeInput, latitudeInput );
+            double ratioSpecificHeatOutput = tabulatedAtmosphere.getRatioOfSpecificHeats( altitudeInput, longitudeInput, latitudeInput );
+            double soundSpeedOutput = tabulatedAtmosphere.getSpeedOfSound( altitudeInput, longitudeInput, latitudeInput );
+
+            std::cout << "Gas Constant Output: " << gasConstantOutput << " J/kg/K" << std::endl;
+            std::cout << "Difference Gas Constant: " << gasConstantOutput - gasConstantInput << " J/kg/K" << std::endl << std::endl;
+            std::cout << "Specific Heat Ratio Output: " << ratioSpecificHeatOutput << std::endl;
+            std::cout << "Difference Specific Heat Ratio: " << ratioSpecificHeatOutput - ratioSpecificHeatInput << std::endl << std::endl;
+            std::cout << "Speed Of Sound Output: " << soundSpeedOutput << " m/s" << std::endl;
+            std::cout << "Difference Speed Of Sound: " << soundSpeedOutput - soundSpeedInput << " m/s" << std::endl << std::endl;
             break;
         }
         }

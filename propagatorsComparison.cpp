@@ -229,10 +229,6 @@ int main( )
                 aerodynamicCoefficientFiles, referenceAreaAerodynamic,
                 boost::assign::list_of( aerodynamics::angle_of_attack_dependent )( aerodynamics::altitude_dependent ),
                 true, true );
-//    double aerodynamicCoefficient = 2.2;
-//    boost::shared_ptr< AerodynamicCoefficientSettings > aerodynamicCoefficientSettings =
-//            boost::make_shared< ConstantAerodynamicCoefficientSettings >(
-//                referenceAreaAerodynamic, aerodynamicCoefficient * Eigen::Vector3d::UnitX( ), true, true );
 
     bodyMap[ "Satellite" ]->setAerodynamicCoefficientInterface(
                 createAerodynamicCoefficientInterface( aerodynamicCoefficientSettings, "Satellite" ) );
@@ -324,42 +320,11 @@ int main( )
 
             ///////////////////////     CREATE PROPAGATION SETTINGS         ////////////////////////////////////////////
 
-            // Select propagator
-            TranslationalPropagatorType translationalPropagatorType = undefined_propagator;
-            if ( propagatorType == 0 )
-            {
-                translationalPropagatorType = cowell;
-            }
-            else if ( propagatorType == 1 )
-            {
-                translationalPropagatorType = encke;
-            }
-            else if ( propagatorType == 2 )
-            {
-                translationalPropagatorType = gauss_keplerian;
-            }
-            else if ( propagatorType == 3 )
-            {
-                translationalPropagatorType = unified_state_model_quaternions;
-            }
-            else if ( propagatorType == 4 )
-            {
-                translationalPropagatorType = unified_state_model_modified_rodrigues_parameters;
-            }
-            else if ( propagatorType == 5 )
-            {
-                translationalPropagatorType = unified_state_model_exponential_map;
-            }
-            else if ( propagatorType == 6 )
-            {
-                translationalPropagatorType = cowell;
-            }
-
             // Propagator settings
             boost::shared_ptr< TranslationalStatePropagatorSettings< double > > propagatorSettings =
                     boost::make_shared< TranslationalStatePropagatorSettings< double > >
                     ( centralBodies, accelerationModelMap, bodiesToPropagate, SatelliteInitialState, simulationEndEpoch,
-                      translationalPropagatorType );
+                      static_cast< TranslationalPropagatorType >( propagatorType ) );
 
             // Integrator settings
             boost::shared_ptr< IntegratorSettings< > > integratorSettings;

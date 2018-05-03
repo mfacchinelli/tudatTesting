@@ -81,27 +81,33 @@ int main( )
     bodiesToCreate.push_back( "Saturn" );
 
     // Tabulated atmosphere settings
+    bool meanAtmosphere = false;
     std::map< int, std::string > tabulatedAtmosphereFiles;
-    tabulatedAtmosphereFiles[ 0 ] = input_output::getAtmosphereTablesPath( ) +
-            "MCDMeanAtmosphereTimeAverage/density.dat";
-    tabulatedAtmosphereFiles[ 1 ] = input_output::getAtmosphereTablesPath( ) +
-            "MCDMeanAtmosphereTimeAverage/pressure.dat";
-    tabulatedAtmosphereFiles[ 2 ] = input_output::getAtmosphereTablesPath( ) +
-            "MCDMeanAtmosphereTimeAverage/temperature.dat";
-    tabulatedAtmosphereFiles[ 3 ] = input_output::getAtmosphereTablesPath( ) +
-            "MCDMeanAtmosphereTimeAverage/gasConstant.dat";
-    tabulatedAtmosphereFiles[ 4 ] = input_output::getAtmosphereTablesPath( ) +
-            "MCDMeanAtmosphereTimeAverage/specificHeatRatio.dat";
+    std::vector< AtmosphereIndependentVariables > atmosphereIndependentVariables;
+    if ( meanAtmosphere )
+    {
+        tabulatedAtmosphereFiles[ 0 ] = getAtmosphereTablesPath( ) + "MCDMeanAtmosphere.dat";
+        atmosphereIndependentVariables.push_back( altitude_dependent_atmosphere );
+    }
+    else
+    {
+        tabulatedAtmosphereFiles[ 0 ] = getAtmosphereTablesPath( ) + "MCDMeanAtmosphereTimeAverage/density.dat";
+        tabulatedAtmosphereFiles[ 1 ] = getAtmosphereTablesPath( ) + "MCDMeanAtmosphereTimeAverage/pressure.dat";
+        tabulatedAtmosphereFiles[ 2 ] = getAtmosphereTablesPath( ) + "MCDMeanAtmosphereTimeAverage/temperature.dat";
+        tabulatedAtmosphereFiles[ 3 ] = getAtmosphereTablesPath( ) + "MCDMeanAtmosphereTimeAverage/gasConstant.dat";
+        tabulatedAtmosphereFiles[ 4 ] = getAtmosphereTablesPath( ) + "MCDMeanAtmosphereTimeAverage/specificHeatRatio.dat";
+        atmosphereIndependentVariables.push_back( longitude_dependent_atmosphere );
+        atmosphereIndependentVariables.push_back( latitude_dependent_atmosphere );
+        atmosphereIndependentVariables.push_back( altitude_dependent_atmosphere );
+    }
     std::vector< AtmosphereDependentVariables > atmosphereDependentVariables = {
         density_dependent_atmosphere, pressure_dependent_atmosphere, temperature_dependent_atmosphere,
         gas_constant_dependent_atmosphere, specific_heat_ratio_dependent_atmosphere };
-    std::vector< AtmosphereIndependentVariables > atmosphereIndependentVariables = {
-        longitude_dependent_atmosphere, latitude_dependent_atmosphere, altitude_dependent_atmosphere };
 
     // Create body objects.
     std::map< std::string, boost::shared_ptr< BodySettings > > bodySettings =
             getDefaultBodySettings( bodiesToCreate, simulationStartEpoch - 300.0, simulationEndEpoch + 300.0 );
-    for( unsigned int i = 0; i < bodiesToCreate.size( ); i++ )
+    for ( unsigned int i = 0; i < bodiesToCreate.size( ); i++ )
     {
         bodySettings[ bodiesToCreate.at( i ) ]->ephemerisSettings->resetFrameOrientation( "J2000" );
         bodySettings[ bodiesToCreate.at( i ) ]->rotationModelSettings->resetOriginalFrame( "J2000" );
@@ -110,7 +116,9 @@ int main( )
     bodySettings[ "Mars" ]->atmosphereSettings = boost::make_shared< TabulatedAtmosphereSettings >( tabulatedAtmosphereFiles,
                                                                                                     atmosphereDependentVariables,
                                                                                                     atmosphereIndependentVariables,
-                                                                                                    197.0, 1.3 );
+                                                                                                    197.0, 1.3,
+                                                                                                    interpolators::use_boundary_value );
+
     NamedBodyMap bodyMap = createBodies( bodySettings );
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -178,7 +186,7 @@ int main( )
     else
     {
         accelerationsOfSatellite[ "Mars" ].push_back( boost::make_shared< SphericalHarmonicAccelerationSettings >( 21, 21 ) );
-        for( unsigned int i = 0; i < bodiesToCreate.size( ); i++ )
+        for ( unsigned int i = 0; i < bodiesToCreate.size( ); i++ )
         {
             if ( i != 1 )
             {
@@ -223,40 +231,10 @@ int main( )
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     // Select propagator
-    int propagatorType = 6;
+    int propagatorType = 0;
+    int integratorType = 2;
 
     ///////////////////////     CREATE PROPAGATION SETTINGS         ////////////////////////////////////////////
-
-    // Select propagator
-    TranslationalPropagatorType translationalPropagatorType = undefined_propagator;
-    if ( propagatorType == 0 )
-    {
-        translationalPropagatorType = cowell;
-    }
-    else if ( propagatorType == 1 )
-    {
-        translationalPropagatorType = encke;
-    }
-    else if ( propagatorType == 2 )
-    {
-        translationalPropagatorType = gauss_keplerian;
-    }
-    else if ( propagatorType == 3 )
-    {
-        translationalPropagatorType = unified_state_model_quaternions;
-    }
-    else if ( propagatorType == 4 )
-    {
-        translationalPropagatorType = unified_state_model_modified_rodrigues_parameters;
-    }
-    else if ( propagatorType == 5 )
-    {
-        translationalPropagatorType = unified_state_model_exponential_map;
-    }
-    else if ( propagatorType == 6 )
-    {
-        translationalPropagatorType = cowell;
-    }
 
     // Dependent variables
     std::vector< boost::shared_ptr< SingleDependentVariableSaveSettings > > dependentVariables;
@@ -266,7 +244,7 @@ int main( )
                     basic_astrodynamics::aerodynamic, "Satellite", "Mars", true ) );
     dependentVariables.push_back( boost::make_shared< SingleAccelerationDependentVariableSaveSettings >(
                     basic_astrodynamics::cannon_ball_radiation_pressure, "Satellite", "Sun", true ) );
-    for( unsigned int i = 0; i < bodiesToCreate.size( ); i++ )
+    for ( unsigned int i = 0; i < bodiesToCreate.size( ); i++ )
     {
         if ( i != 1 )
         {
@@ -279,21 +257,29 @@ int main( )
     boost::shared_ptr< TranslationalStatePropagatorSettings< double > > propagatorSettings =
             boost::make_shared< TranslationalStatePropagatorSettings< double > >
             ( centralBodies, accelerationModelMap, bodiesToPropagate, SatelliteInitialState, simulationEndEpoch,
-              translationalPropagatorType, boost::make_shared< DependentVariableSaveSettings >( dependentVariables ) );
+              static_cast< TranslationalPropagatorType >( propagatorType ),
+              boost::make_shared< DependentVariableSaveSettings >( dependentVariables ) );
 
     // Integrator settings
     boost::shared_ptr< IntegratorSettings< > > integratorSettings;
-    if ( propagatorType == 6 )
+    switch ( integratorType )
     {
+    case 0:
         integratorSettings = boost::make_shared< RungeKuttaVariableStepSizeSettings< > >(
                     rungeKuttaVariableStepSize, simulationStartEpoch, 10,
                     RungeKuttaCoefficients::rungeKuttaFehlberg78, 1e-3, 1e4, 1e-15, 1e-15 );
-    }
-    else
-    {
+        break;
+    case 1:
         integratorSettings = boost::make_shared< RungeKuttaVariableStepSizeSettings< > >(
                     rungeKuttaVariableStepSize, simulationStartEpoch, 100.0,
                     RungeKuttaCoefficients::rungeKuttaFehlberg56, 1e-1, 1e5, 1e-7, 1e-7 );
+        break;
+    case 2:
+        integratorSettings = boost::make_shared< IntegratorSettings< > > (
+                    rungeKutta4, simulationStartEpoch, 5.0 );
+        break;
+    default:
+        throw std::runtime_error( "Integrator type not recognized." );
     }
 
     ///////////////////////     PROPAGATE ORBIT                     ////////////////////////////////////////////
@@ -318,7 +304,7 @@ int main( )
     Eigen::Vector6d currentCartesianState;
     std::map< double, Eigen::VectorXd > keplerianIntegrationResult;
     std::map< double, Eigen::VectorXd > usmIntegrationResult;
-    for( std::map< double, Eigen::VectorXd >::const_iterator stateIterator = cartesianIntegrationResult.begin( );
+    for ( std::map< double, Eigen::VectorXd >::const_iterator stateIterator = cartesianIntegrationResult.begin( );
          stateIterator != cartesianIntegrationResult.end( ); stateIterator++ )
     {
         // Retrieve current Cartesian state (convert to Earth-centered frame if needed)
