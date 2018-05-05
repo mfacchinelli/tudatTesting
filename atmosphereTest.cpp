@@ -49,9 +49,9 @@ int main( )
         case 0: // 1-D: corner conditions, IND: nominal order, DEP: nominal order
         {
             // Create a tabulated atmosphere object.
-            std::map< int, std::string > tabulatedAtmosphereFiles = { { 0, input_output::getAtmosphereTablesPath( ) +
-                                                                        "USSA1976Until100kmPer100mUntil1000kmPer1000m.dat" } };
-            TabulatedAtmosphere tabulatedAtmosphere( tabulatedAtmosphereFiles );
+            std::string tabulatedAtmosphereFile = input_output::getAtmosphereTablesPath( ) +
+                    "USSA1976Until100kmPer100mUntil1000kmPer1000m.dat";
+            TabulatedAtmosphere tabulatedAtmosphere( tabulatedAtmosphereFile );
 
             // Declare input and output
             altitudeInput = 0.0;
@@ -67,9 +67,9 @@ int main( )
         case 1: // 1-D: interpolated conditions, IND: nominal order, DEP: nominal order
         {
             // Create a tabulated atmosphere object.
-            std::map< int, std::string > tabulatedAtmosphereFiles = { { 0, input_output::getAtmosphereTablesPath( ) +
-                                                                        "USSA1976Until100kmPer100mUntil1000kmPer1000m.dat" } };
-            TabulatedAtmosphere tabulatedAtmosphere( tabulatedAtmosphereFiles );
+            std::string tabulatedAtmosphereFile = input_output::getAtmosphereTablesPath( ) +
+                    "USSA1976Until100kmPer100mUntil1000kmPer1000m.dat";
+            TabulatedAtmosphere tabulatedAtmosphere( tabulatedAtmosphereFile );
 
             // Declare input and output
             altitudeInput = 10.05e3;
@@ -91,7 +91,7 @@ int main( )
                 pressure_dependent_atmosphere, specific_heat_ratio_dependent_atmosphere, gas_constant_dependent_atmosphere,
                 temperature_dependent_atmosphere, density_dependent_atmosphere };
             std::vector< AtmosphereIndependentVariables > independentVariables = { latitude_dependent_atmosphere };
-            TabulatedAtmosphere tabulatedAtmosphere( tabulatedAtmosphereFiles, dependentVariables, independentVariables );
+            TabulatedAtmosphere tabulatedAtmosphere( tabulatedAtmosphereFiles, independentVariables, dependentVariables );
 
             // Declare input and output
             latitudeInput = 5.0e4;
@@ -133,7 +133,7 @@ int main( )
             std::vector< AtmosphereIndependentVariables > independentVariables = {
                 longitude_dependent_atmosphere, latitude_dependent_atmosphere, altitude_dependent_atmosphere };
 
-            TabulatedAtmosphere tabulatedAtmosphere( tabulatedAtmosphereFiles, dependentVariables, independentVariables );
+            TabulatedAtmosphere tabulatedAtmosphere( tabulatedAtmosphereFiles, independentVariables, dependentVariables );
 
             // Declare input and output
             altitudeInput = 5.0e4;
@@ -164,7 +164,7 @@ int main( )
             std::vector< AtmosphereIndependentVariables > independentVariables = {
                 longitude_dependent_atmosphere, latitude_dependent_atmosphere, altitude_dependent_atmosphere };
 
-            TabulatedAtmosphere tabulatedAtmosphere( tabulatedAtmosphereFiles, dependentVariables, independentVariables );
+            TabulatedAtmosphere tabulatedAtmosphere( tabulatedAtmosphereFiles, independentVariables, dependentVariables );
 
             // Declare input and output
             altitudeInput = 6.6202093e5;
@@ -200,7 +200,7 @@ int main( )
             std::vector< AtmosphereIndependentVariables > independentVariables = {
                 longitude_dependent_atmosphere, latitude_dependent_atmosphere, altitude_dependent_atmosphere };
 
-            TabulatedAtmosphere tabulatedAtmosphere( tabulatedAtmosphereFiles, dependentVariables, independentVariables );
+            TabulatedAtmosphere tabulatedAtmosphere( tabulatedAtmosphereFiles, independentVariables, dependentVariables );
 
             // Declare input and output
             altitudeInput = 236.9862e3;

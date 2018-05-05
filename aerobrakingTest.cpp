@@ -103,6 +103,9 @@ int main( )
     std::vector< AtmosphereDependentVariables > atmosphereDependentVariables = {
         density_dependent_atmosphere, pressure_dependent_atmosphere, temperature_dependent_atmosphere,
         gas_constant_dependent_atmosphere, specific_heat_ratio_dependent_atmosphere };
+    std::vector< interpolators::BoundaryInterpolationType > boundaryHandling = { interpolators::use_boundary_value,
+                                                                                 interpolators::use_boundary_value,
+                                                                                 interpolators::use_default_value };
 
     // Create body objects.
     std::map< std::string, boost::shared_ptr< BodySettings > > bodySettings =
@@ -114,10 +117,10 @@ int main( )
     }
     bodySettings[ "Mars" ]->gravityFieldSettings = boost::make_shared< FromFileSphericalHarmonicsGravityFieldSettings >( jgmro120d );
     bodySettings[ "Mars" ]->atmosphereSettings = boost::make_shared< TabulatedAtmosphereSettings >( tabulatedAtmosphereFiles,
-                                                                                                    atmosphereDependentVariables,
                                                                                                     atmosphereIndependentVariables,
+                                                                                                    atmosphereDependentVariables,
                                                                                                     197.0, 1.3,
-                                                                                                    interpolators::use_boundary_value );
+                                                                                                    boundaryHandling );
 
     NamedBodyMap bodyMap = createBodies( bodySettings );
 
@@ -232,7 +235,7 @@ int main( )
 
     // Select propagator
     int propagatorType = 0;
-    int integratorType = 2;
+    int integratorType = 0;
 
     ///////////////////////     CREATE PROPAGATION SETTINGS         ////////////////////////////////////////////
 
