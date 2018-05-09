@@ -64,38 +64,48 @@ int main( )
 
     // Predefine variables
     double simulationDuration = 0.0;
-    std::vector< double > constantTimeStep;
+    std::vector< double > constantTimeStep;    
+    std::string simulationCentralBody;
+    int limitingSphericalHarminics;
     Eigen::Vector6d SatelliteInitialStateInKeplerianElements;
 
     // Select case
     //      0: Aerocapture
     //      1: Full aerobraking
-    //      2: Circular orbit at LMO (Low Mars Orbit)
-    //      3: Interplanetary trajectory
-    int testCase = 0;
-    std::vector< string > pathAdditionTestCase = { "aero", "aero_full", "circ", "inter" };
+    //      2: Interplanetary trajectory
+    //      3: Circular orbit at LEO (Low Earth Orbit)
+    int testCase = 1;
+    std::vector< std::string > pathAdditionTestCase = { "aero", "aero_full", "inter", "vittaldev" };
     switch ( testCase )
     {
     case 0: // Aerocapture
     {
-        // Set simulation time settings.
-        simulationDuration = 1.0 * physical_constants::JULIAN_DAY;
-        constantTimeStep = { 0.1, 1.0, 10.0, 100.0 };
+        // Set simulation time settings
+        simulationDuration = 0.625 * physical_constants::JULIAN_DAY;
+        constantTimeStep = { 1.0, 5.0, 10.0, 25.0, 50.0, 100.0 };
+
+        // Set simulation central body
+        simulationCentralBody = "Mars";
+        limitingSphericalHarminics = 21;
 
         // Initial conditions
-        SatelliteInitialStateInKeplerianElements( semiMajorAxisIndex ) = -17362500;
+        SatelliteInitialStateInKeplerianElements( semiMajorAxisIndex ) = -17305000.000000;
         SatelliteInitialStateInKeplerianElements( eccentricityIndex ) = 1.2;
         SatelliteInitialStateInKeplerianElements( inclinationIndex ) = convertDegreesToRadians( 93.0 );
         SatelliteInitialStateInKeplerianElements( argumentOfPeriapsisIndex ) = convertDegreesToRadians( 158.7 );
         SatelliteInitialStateInKeplerianElements( longitudeOfAscendingNodeIndex ) = convertDegreesToRadians( 23.4 );
-        SatelliteInitialStateInKeplerianElements( trueAnomalyIndex ) = convertDegreesToRadians( 250.0 );
+        SatelliteInitialStateInKeplerianElements( trueAnomalyIndex ) = convertDegreesToRadians( 230.0 );
         break;
     }
     case 1: // Full aerobraking
     {
         // Set simulation time settings.
-        simulationDuration = 150.0 * physical_constants::JULIAN_DAY;
-        constantTimeStep = { 5.0, 50.0, 100.0, 250.0 };
+        simulationDuration = 100.0 * physical_constants::JULIAN_DAY;
+        constantTimeStep = { 10.0, 25.0, 50.0, 75.0, 100.0, 150.0, 200.0, 300.0 };
+
+        // Set simulation central body
+        simulationCentralBody = "Mars";
+        limitingSphericalHarminics = 21;
 
         // Initial conditions
         SatelliteInitialStateInKeplerianElements( semiMajorAxisIndex ) = 27198500;
@@ -106,24 +116,29 @@ int main( )
         SatelliteInitialStateInKeplerianElements( trueAnomalyIndex ) = convertDegreesToRadians( 180.0 );
         break;
     }
-    case 2: // Circular orbit at LMO
+    case 2: // Interplanetary trajectory
     {
-        // Set simulation time settings.
-        simulationDuration = 27.5 * physical_constants::JULIAN_DAY;
-        constantTimeStep = { 1.0, 10.0, 50.0, 100.0 };
-
-        // Initial conditions
-        SatelliteInitialStateInKeplerianElements( semiMajorAxisIndex ) = 3621000;
-        SatelliteInitialStateInKeplerianElements( eccentricityIndex ) = 0.006904;
-        SatelliteInitialStateInKeplerianElements( inclinationIndex ) = convertDegreesToRadians( 93.0 );
-        SatelliteInitialStateInKeplerianElements( argumentOfPeriapsisIndex ) = convertDegreesToRadians( 158.7 );
-        SatelliteInitialStateInKeplerianElements( longitudeOfAscendingNodeIndex ) = convertDegreesToRadians( 23.4 );
-        SatelliteInitialStateInKeplerianElements( trueAnomalyIndex ) = convertDegreesToRadians( 180.0 );
+        simulationCentralBody = "Sun";
         break;
     }
-    case 3: // Interplanetary trajectory
+    case 3: // Vittaldev circular orbit at LEO
     {
+        // Set simulation time settings.
+        simulationDuration = 10.0 * physical_constants::JULIAN_DAY;
+        constantTimeStep = { 20.0, 30.0, 40.0, 50.0, 75.0, 100.0, 150.0, 200.0, 250.0, 300.0 };
 
+        // Set simulation central body
+        simulationCentralBody = "Earth";
+        limitingSphericalHarminics = 2;
+
+        // Initial conditions
+        SatelliteInitialStateInKeplerianElements( semiMajorAxisIndex ) = 6936000;
+        SatelliteInitialStateInKeplerianElements( eccentricityIndex ) = 0.0;
+        SatelliteInitialStateInKeplerianElements( inclinationIndex ) = convertDegreesToRadians( 28.5 );
+        SatelliteInitialStateInKeplerianElements( argumentOfPeriapsisIndex ) = convertDegreesToRadians( 194.8 );
+        SatelliteInitialStateInKeplerianElements( longitudeOfAscendingNodeIndex ) = convertDegreesToRadians( 272.3 );
+        SatelliteInitialStateInKeplerianElements( trueAnomalyIndex ) = convertDegreesToRadians( 0.0 );
+        break;
     }
     default:
     {
@@ -151,16 +166,15 @@ int main( )
     {
     case 0:
     case 1:
-    case 2:
     {
         bodiesToCreate.push_back( "Sun" );
-        bodiesToCreate.push_back( "Mars" );
+        bodiesToCreate.push_back( simulationCentralBody );
         bodiesToCreate.push_back( "Earth" );
         break;
     }
-    case 3:
+    case 2:
     {
-        bodiesToCreate.push_back( "Sun" );
+        bodiesToCreate.push_back( simulationCentralBody );
         bodiesToCreate.push_back( "Mercury" );
         bodiesToCreate.push_back( "Mars" );
         bodiesToCreate.push_back( "Earth" );
@@ -170,25 +184,14 @@ int main( )
         bodiesToCreate.push_back( "Uranus" );
         break;
     }
+    case 3:
+    {
+        bodiesToCreate.push_back( "Sun" );
+        bodiesToCreate.push_back( simulationCentralBody );
+        bodiesToCreate.push_back( "Moon" );
+        break;
     }
-
-    // Tabulated atmosphere settings
-    std::map< int, std::string > tabulatedAtmosphereFiles;
-    tabulatedAtmosphereFiles[ 0 ] = getAtmosphereTablesPath( ) +
-            "MCDMeanAtmosphereTimeAverage/density.dat";
-    tabulatedAtmosphereFiles[ 1 ] = getAtmosphereTablesPath( ) +
-            "MCDMeanAtmosphereTimeAverage/pressure.dat";
-    tabulatedAtmosphereFiles[ 2 ] = getAtmosphereTablesPath( ) +
-            "MCDMeanAtmosphereTimeAverage/temperature.dat";
-    tabulatedAtmosphereFiles[ 3 ] = getAtmosphereTablesPath( ) +
-            "MCDMeanAtmosphereTimeAverage/gasConstant.dat";
-    tabulatedAtmosphereFiles[ 4 ] = getAtmosphereTablesPath( ) +
-            "MCDMeanAtmosphereTimeAverage/specificHeatRatio.dat";
-    std::vector< AtmosphereDependentVariables > atmosphereDependentVariables = {
-        density_dependent_atmosphere, pressure_dependent_atmosphere, temperature_dependent_atmosphere,
-        gas_constant_dependent_atmosphere, specific_heat_ratio_dependent_atmosphere };
-    std::vector< AtmosphereIndependentVariables > atmosphereIndependentVariables = {
-        longitude_dependent_atmosphere, latitude_dependent_atmosphere, altitude_dependent_atmosphere };
+    }
 
     // Create body objects.
     std::map< std::string, boost::shared_ptr< BodySettings > > bodySettings =
@@ -198,10 +201,49 @@ int main( )
         bodySettings[ bodiesToCreate.at( i ) ]->ephemerisSettings->resetFrameOrientation( "J2000" );
         bodySettings[ bodiesToCreate.at( i ) ]->rotationModelSettings->resetOriginalFrame( "J2000" );
     }
-    bodySettings[ "Mars" ]->gravityFieldSettings = boost::make_shared< FromFileSphericalHarmonicsGravityFieldSettings >( jgmro120d );
-    bodySettings[ "Mars" ]->atmosphereSettings = boost::make_shared< TabulatedAtmosphereSettings >(
-                tabulatedAtmosphereFiles, atmosphereIndependentVariables, atmosphereDependentVariables,
-                interpolators::use_boundary_value );
+    switch ( testCase )
+    {
+    case 0:
+    case 1:
+    {
+        // Tabulated atmosphere settings
+        std::map< int, std::string > tabulatedAtmosphereFiles;
+        tabulatedAtmosphereFiles[ 0 ] = getAtmosphereTablesPath( ) +
+                "MCDMeanAtmosphereTimeAverage/density.dat";
+        tabulatedAtmosphereFiles[ 1 ] = getAtmosphereTablesPath( ) +
+                "MCDMeanAtmosphereTimeAverage/pressure.dat";
+        tabulatedAtmosphereFiles[ 2 ] = getAtmosphereTablesPath( ) +
+                "MCDMeanAtmosphereTimeAverage/temperature.dat";
+        tabulatedAtmosphereFiles[ 3 ] = getAtmosphereTablesPath( ) +
+                "MCDMeanAtmosphereTimeAverage/gasConstant.dat";
+        tabulatedAtmosphereFiles[ 4 ] = getAtmosphereTablesPath( ) +
+                "MCDMeanAtmosphereTimeAverage/specificHeatRatio.dat";
+        std::vector< AtmosphereDependentVariables > atmosphereDependentVariables = {
+            density_dependent_atmosphere, pressure_dependent_atmosphere, temperature_dependent_atmosphere,
+            gas_constant_dependent_atmosphere, specific_heat_ratio_dependent_atmosphere };
+        std::vector< AtmosphereIndependentVariables > atmosphereIndependentVariables = {
+            longitude_dependent_atmosphere, latitude_dependent_atmosphere, altitude_dependent_atmosphere };
+
+        bodySettings[ simulationCentralBody ]->gravityFieldSettings = boost::make_shared<
+                FromFileSphericalHarmonicsGravityFieldSettings >( jgmro120d );
+        bodySettings[ simulationCentralBody ]->atmosphereSettings = boost::make_shared< TabulatedAtmosphereSettings >(
+                    tabulatedAtmosphereFiles, atmosphereIndependentVariables, atmosphereDependentVariables,
+                    interpolators::use_boundary_value );
+        break;
+    }
+    case 2:
+    {
+        break;
+    }
+    case 3:
+    {
+        bodySettings[ simulationCentralBody ]->gravityFieldSettings = boost::make_shared<
+                FromFileSphericalHarmonicsGravityFieldSettings >( ggm02s );
+        bodySettings[ simulationCentralBody ]->atmosphereSettings = boost::make_shared< TabulatedAtmosphereSettings >(
+                    getAtmosphereTablesPath( ) + "USSA1976Until100kmPer100mUntil1000kmPer1000m.dat" );
+        break;
+    }
+    }
     NamedBodyMap bodyMap = createBodies( bodySettings );
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -210,7 +252,7 @@ int main( )
 
     // Create spacecraft object.
     bodyMap[ "Satellite" ] = boost::make_shared< simulation_setup::Body >( );
-    bodyMap[ "Satellite" ]->setConstantBodyMass( 300.0 );
+    bodyMap[ "Satellite" ]->setConstantBodyMass( 1000.0 );
 
     // Aerodynamic parameters
     const double referenceAreaAerodynamic = 37.5;
@@ -233,10 +275,10 @@ int main( )
                 createAerodynamicCoefficientInterface( aerodynamicCoefficientSettings, "Satellite" ) );
 
     // Create radiation pressure settings
-    double referenceAreaRadiation = 20.0;
+    double referenceAreaRadiation = referenceAreaAerodynamic;
     double radiationPressureCoefficient = 1.25;
     std::vector< std::string > occultingBodies;
-    occultingBodies.push_back( "Mars" );
+    occultingBodies.push_back( simulationCentralBody );
     boost::shared_ptr< RadiationPressureInterfaceSettings > SatelliteRadiationPressureSettings =
             boost::make_shared< CannonBallRadiationPressureInterfaceSettings >(
                 "Sun", referenceAreaRadiation, radiationPressureCoefficient, occultingBodies );
@@ -259,31 +301,47 @@ int main( )
     std::vector< std::string > centralBodies;
 
     // Define propagation settings.
-    bool keplerOrbit = false;
     std::map< std::string, std::vector< boost::shared_ptr< AccelerationSettings > > > accelerationsOfSatellite;
-    if ( keplerOrbit )
+    switch ( testCase )
     {
-        accelerationsOfSatellite[ "Mars" ].push_back( boost::make_shared< AccelerationSettings >( central_gravity ) );
-    }
-    else
+    case 0:
+    case 1:
+    case 3:
     {
-        accelerationsOfSatellite[ "Mars" ].push_back( boost::make_shared< SphericalHarmonicAccelerationSettings >( 21, 21 ) );
-        for( unsigned int i = 0; i < bodiesToCreate.size( ); i++ )
+        bool keplerOrbit = false;
+        if ( keplerOrbit )
         {
-            if ( i != 1 )
-            {
-                accelerationsOfSatellite[ bodiesToCreate.at( i ) ].push_back( boost::make_shared< AccelerationSettings >( central_gravity ) );
-            }
+            accelerationsOfSatellite[ simulationCentralBody ].push_back( boost::make_shared< AccelerationSettings >( central_gravity ) );
         }
-        accelerationsOfSatellite[ "Sun" ].push_back( boost::make_shared< AccelerationSettings >( cannon_ball_radiation_pressure ) );
+        else
+        {
+            accelerationsOfSatellite[ simulationCentralBody ].push_back(
+                        boost::make_shared< SphericalHarmonicAccelerationSettings >( limitingSphericalHarminics,
+                                                                                     limitingSphericalHarminics ) );
+            for( unsigned int i = 0; i < bodiesToCreate.size( ); i++ )
+            {
+                if ( bodiesToCreate.at( i ) != simulationCentralBody )
+                {
+                    accelerationsOfSatellite[ bodiesToCreate.at( i ) ].push_back( boost::make_shared< AccelerationSettings >( central_gravity ) );
+                }
+            }
+            accelerationsOfSatellite[ "Sun" ].push_back( boost::make_shared< AccelerationSettings >( cannon_ball_radiation_pressure ) );
 
-        accelerationsOfSatellite[ "Mars" ].push_back( boost::make_shared< AccelerationSettings >( aerodynamic ) );
+            accelerationsOfSatellite[ simulationCentralBody ].push_back( boost::make_shared< AccelerationSettings >( aerodynamic ) );
+        }
+        break;
     }
+    case 2:
+    {
+        break;
+    }
+    }
+
 
     // Add acceleration information
     accelerationMap[ "Satellite" ] = accelerationsOfSatellite;
     bodiesToPropagate.push_back( "Satellite" );
-    centralBodies.push_back( "Mars" );
+    centralBodies.push_back( simulationCentralBody );
 
     AccelerationMap accelerationModelMap = createAccelerationModelsMap(
                 bodyMap, accelerationMap, bodiesToPropagate, centralBodies );
@@ -293,23 +351,22 @@ int main( )
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     // Convert to Cartesian elements
-    double marsGravitationalParameter = bodyMap.at( "Mars" )->getGravityFieldModel( )->getGravitationalParameter( );
+    double mainGravitationalParameter = bodyMap.at( simulationCentralBody )->getGravityFieldModel( )->getGravitationalParameter( );
     const Eigen::Vector6d SatelliteInitialState = convertKeplerianToCartesianElements(
-                SatelliteInitialStateInKeplerianElements, marsGravitationalParameter );
+                SatelliteInitialStateInKeplerianElements, mainGravitationalParameter );
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ///////////////////////             LOOP OVER PROPAGATORS                  ////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     // Loop over propagators
-    int integratorLimit;
-    int valueLimit;
+    int integratorLimit, valueLimit;
     double tolerance;
     std::vector< string > nameAdditionPropagator = { "_cowell", "_encke", "_kepl", "_equi", "_usm7", "_usm6", "_usmem", "_ref" };
     std::vector< string > nameAdditionIntegrator = { "_var", "_const" };
     for ( int propagatorType = 0; propagatorType < 8; propagatorType++ )
     {
-        // Skip Gauss propagators
+        // Skip Encke and Gauss propagators
         if ( !( propagatorType == 1 || propagatorType == 2 || propagatorType == 3 ) )
         {
             // Progress
@@ -356,7 +413,7 @@ int main( )
                         // Integrator
                         if ( integratorType == 0 )
                         {
-                            tolerance = std::pow( 10, value - 12 );
+                            tolerance = std::pow( 10, value - 13 );
                             integratorSettings = boost::make_shared< RungeKuttaVariableStepSizeSettings< > >(
                                         rungeKuttaVariableStepSize, simulationStartEpoch, 100.0,
                                         RungeKuttaCoefficients::rungeKuttaFehlberg56, 1e-1, 1e5,
@@ -393,22 +450,15 @@ int main( )
                     ///////////////////////     PROVIDE OUTPUT TO FILES             ////////////////////////////////////////////
 
                     // Compute map of Kepler elements
-                    Eigen::Vector6d currentCartesianState;
+                    Eigen::Vector6d cartesianState;
                     std::map< double, Eigen::VectorXd > keplerianIntegrationResult;
                     for( std::map< double, Eigen::VectorXd >::const_iterator stateIterator = cartesianIntegrationResult.begin( );
                          stateIterator != cartesianIntegrationResult.end( ); stateIterator++ )
                     {
                         // Retrieve current Cartesian state (convert to Earth-centered frame if needed)
-                        currentCartesianState = stateIterator->second;
-
-                        if ( centralBodies.at( 0 ) == "SSB" )
-                        {
-                            currentCartesianState -=
-                                    bodyMap[ "Mars" ]->getStateInBaseFrameFromEphemeris( stateIterator->first );
-                        }
-
+                        cartesianState = stateIterator->second;
                         keplerianIntegrationResult[ stateIterator->first ] =
-                                convertCartesianToKeplerianElements( currentCartesianState, marsGravitationalParameter );
+                                convertCartesianToKeplerianElements( cartesianState, mainGravitationalParameter );
                     }
 
                     // Write perturbed satellite propagation history to file.
