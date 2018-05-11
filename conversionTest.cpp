@@ -130,7 +130,7 @@ int main( )
 
     // Predefine USM vectors
     Eigen::Vector7d convertedUnifiedStateModelQuaternionsElements;
-    Eigen::Vector7d convertedUnifiedStateModelModifiedRodriguesParametersElements;
+    Eigen::Vector7d convertedUnifiedStateModelModifiedRodriguesParameterElements;
     Eigen::Vector6d convertedUnifiedStateModelExponentialMapElements;
 
     // Select conversion mode
@@ -200,13 +200,13 @@ int main( )
                                         convertedUnifiedStateModelQuaternionsElements, centralBodyGravitationalParameter );
 
                             // Convert to USM6 and back
-                            convertedUnifiedStateModelModifiedRodriguesParametersElements =
-                                    convertKeplerianToUnifiedStateModelModifiedRodriguesParametersElements(
+                            convertedUnifiedStateModelModifiedRodriguesParameterElements =
+                                    convertKeplerianToUnifiedStateModelModifiedRodriguesParameterElements(
                                         keplerianElements, centralBodyGravitationalParameter );
 
                             convertedKeplerianElementsUSM6 =
                                     convertUnifiedStateModelModifiedRodriguesParametersToKeplerianElements(
-                                        convertedUnifiedStateModelModifiedRodriguesParametersElements,
+                                        convertedUnifiedStateModelModifiedRodriguesParameterElements,
                                         centralBodyGravitationalParameter );
 
                             // Convert to USMEM and back
@@ -234,13 +234,13 @@ int main( )
                                         convertedCartesianElementsUSM7, centralBodyGravitationalParameter );
 
                             // Convert to USM6 and back
-                            convertedUnifiedStateModelModifiedRodriguesParametersElements =
-                                    convertCartesianToUnifiedStateModelModifiedRodriguesParametersElements(
+                            convertedUnifiedStateModelModifiedRodriguesParameterElements =
+                                    convertCartesianToUnifiedStateModelModifiedRodriguesParameterElements(
                                         cartesianElements, centralBodyGravitationalParameter );
 
                             convertedCartesianElementsUSM6 =
                                     convertUnifiedStateModelModifiedRodriguesParametersToCartesianElements(
-                                        convertedUnifiedStateModelModifiedRodriguesParametersElements,
+                                        convertedUnifiedStateModelModifiedRodriguesParameterElements,
                                         centralBodyGravitationalParameter );
                             convertedKeplerianElementsUSM6 = convertCartesianToKeplerianElements(
                                         convertedCartesianElementsUSM6, centralBodyGravitationalParameter );
@@ -272,13 +272,13 @@ int main( )
                                         convertedUnifiedStateModelQuaternionsElements, centralBodyGravitationalParameter );
 
                             // Convert to USM6 and back
-                            convertedUnifiedStateModelModifiedRodriguesParametersElements =
-                                    convertCartesianToUnifiedStateModelModifiedRodriguesParametersElements(
+                            convertedUnifiedStateModelModifiedRodriguesParameterElements =
+                                    convertCartesianToUnifiedStateModelModifiedRodriguesParameterElements(
                                         cartesianElements, centralBodyGravitationalParameter );
 
                             convertedKeplerianElementsUSM6 =
                                     convertUnifiedStateModelModifiedRodriguesParametersToKeplerianElements(
-                                        convertedUnifiedStateModelModifiedRodriguesParametersElements,
+                                        convertedUnifiedStateModelModifiedRodriguesParameterElements,
                                         centralBodyGravitationalParameter );
 
                             // Convert to USMEM and back
@@ -304,13 +304,13 @@ int main( )
                                         convertedCartesianElementsUSM7, centralBodyGravitationalParameter );
 
                             // Convert to USM6 and back
-                            convertedUnifiedStateModelModifiedRodriguesParametersElements =
-                                    convertKeplerianToUnifiedStateModelModifiedRodriguesParametersElements(
+                            convertedUnifiedStateModelModifiedRodriguesParameterElements =
+                                    convertKeplerianToUnifiedStateModelModifiedRodriguesParameterElements(
                                         keplerianElements, centralBodyGravitationalParameter );
 
                             convertedCartesianElementsUSM6 =
                                     convertUnifiedStateModelModifiedRodriguesParametersToCartesianElements(
-                                        convertedUnifiedStateModelModifiedRodriguesParametersElements,
+                                        convertedUnifiedStateModelModifiedRodriguesParameterElements,
                                         centralBodyGravitationalParameter );
                             convertedKeplerianElementsUSM6 = convertCartesianToKeplerianElements(
                                         convertedCartesianElementsUSM6, centralBodyGravitationalParameter );
@@ -338,7 +338,7 @@ int main( )
                         keplerianElementsUSM6Output[ loopIndex ] = convertedKeplerianElementsUSM6;
                         keplerianElementsUSMEMOutput[ loopIndex ] = convertedKeplerianElementsUSMEM;
                         unifiedStateModelQuaternionsElementsOutput[ loopIndex ] = convertedUnifiedStateModelQuaternionsElements;
-                        unifiedStateModelModifiedRodriguesParametersElementsOutput[ loopIndex ] = convertedUnifiedStateModelModifiedRodriguesParametersElements;
+                        unifiedStateModelModifiedRodriguesParametersElementsOutput[ loopIndex ] = convertedUnifiedStateModelModifiedRodriguesParameterElements;
                         unifiedStateModelExponentialMapElementsOutput[ loopIndex ] = convertedUnifiedStateModelExponentialMapElements;
 
                         // Next step

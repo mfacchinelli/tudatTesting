@@ -10,7 +10,38 @@
 
 #include <ctime>
 #include <Tudat/SimulationSetup/tudatSimulationHeader.h>
+
 #include "Tudat/Astrodynamics/Aerodynamics/tabulatedAtmosphere.h"
+#include "Tudat/Astrodynamics/Aerodynamics/rarefiedFlowAnalysis.h"
+
+#include "Tudat/Mathematics/BasicMathematics/mathematicalConstants.h"
+
+#include "Tudat/InputOutput/spartaInputOutput.h"
+
+//! Get path for output directory.
+static inline std::string getOutputPath(
+        const std::string& extraDirectory = "" )
+{
+    // Declare file path string assigned to filePath.
+    // __FILE__ only gives the absolute path of the header file!
+    std::string filePath_( __FILE__ );
+
+    // Strip filename from temporary string and return root-path string.
+    std::string reducedPath = filePath_.substr( 0, filePath_.length( ) -
+                                                std::string( "spartaTest.cpp" ).length( ) );
+    std::string outputPath = reducedPath + "SimulationOutput/";
+    if ( extraDirectory != "" )
+    {
+        outputPath += extraDirectory;
+    }
+
+    if ( outputPath.at( outputPath.size( ) - 1 ) != '/' )
+    {
+        outputPath += "/";
+    }
+
+    return outputPath;
+}
 
 //! Execute propagation of orbit of Satellite around the Earth.
 int main( )
@@ -21,6 +52,7 @@ int main( )
 
     using namespace tudat;
     using namespace tudat::basic_mathematics;
+    using namespace tudat::mathematical_constants;
     using namespace tudat::input_output;
     using namespace tudat::aerodynamics;
 
@@ -29,10 +61,33 @@ int main( )
     /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     // Create a tabulated atmosphere object.
-    std::map< int, std::string > tabulatedAtmosphereFile = { { 0, getAtmosphereTablesPath( ) + "MCDMeanAtmosphere.dat" } };
+    std::string tabulatedAtmosphereFile = getAtmosphereTablesPath( ) + "MCDMeanAtmosphere.dat";
     std::vector< AtmosphereDependentVariables > dependentVariables = {
         density_dependent_atmosphere, pressure_dependent_atmosphere, temperature_dependent_atmosphere,
         gas_constant_dependent_atmosphere, specific_heat_ratio_dependent_atmosphere };
+    TabulatedAtmosphere tabulatedAtmosphere = TabulatedAtmosphere( tabulatedAtmosphereFile,
+                                                                   dependentVariables );
+
+    // Extract atmosphere values
+    std::map< double, Eigen::Vector3d > atmosphere;
+    Eigen::Vector3d currentAtmosphere;
+    int i = 0;
+    for ( double h = 75; h <= 125; h++ )
+    {
+        currentAtmosphere[ 0 ] = tabulatedAtmosphere.getDensity( h * 1e3 );
+        currentAtmosphere[ 1 ] = tabulatedAtmosphere.getPressure( h * 1e3 );
+        currentAtmosphere[ 2 ] = tabulatedAtmosphere.getTemperature( h * 1e3 );
+        atmosphere[ h * 1e3 ] = currentAtmosphere;
+        i++;
+    }
+
+    writeDataMapToTextFile( atmosphere,
+                            "atmosphere.dat",
+                            getOutputPath( ),
+                            "",
+                            std::numeric_limits< double >::digits10,
+                            std::numeric_limits< double >::digits10,
+                            "," );
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////
     ///////////////////////            INPUTS                        ////////////////////////////////////////
@@ -41,436 +96,185 @@ int main( )
     // Define inputs
     const std::string SPARTAExecutable = "'/Users/Michele/AE Software/SPARTA/src/spa_mac_mpi'";
     const int numberOfCores = 2;
-    const std::string geometryFileUser = getSPARTADataPath( ) + "data.sphere"; // check that it is not called data.shape
-    TabulatedAtmosphere atmosphereModel( tabulatedAtmosphereFile, dependentVariables  );
-    const std::vector< double > simulationAltitudes = { 100e3 };//{ 100e3, 125e3, 150e3, 200e3, 300e3, 500e3 };
+    const std::string geometryFileUser = getSpartaDataPath( ) + "data/data.mro"; // check that it is not called data.shape
+    const double referenceArea = 37.5;//3.12715;
+    const double referenceLength = 1.0;
     const int referenceAxis = + 0; // axis opposite to free stream velocity and where reference aerodynamic area is taken
-    const Eigen::Vector3d momentReferencePoint = Eigen::Vector3d::Zero( );
-    const std::string simulationGases = "CO2 H O"; // check that it matches gases in SPARTA atmosphere
+    Eigen::Vector3d momentReferencePoint = Eigen::Vector3d::Zero( );
+    momentReferencePoint[ 1 ] = 1.25;
+    const std::string simulationGases = "CO2"; // check that it matches gases in SPARTA atmosphere
     const double wallTemperature = 300;
     const double accomodationCoefficient = 1.0;
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////
-    ///////////////////////            INTERNAL VARIABLES            ////////////////////////////////////////
+    ///////////////////////            CREATE INTERFACE              ////////////////////////////////////////
     /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    // Define internal files and paths
-    std::string outputDirectory = "results";
-    std::string outputPath = getSPARTADataPath( ) + outputDirectory;
-    std::string inputFile = getSPARTADataPath( )  + "in.sparta";
-    std::string inputFileTemplate = getSPARTADataPath( )  + "SPARTAInputTemplate.txt";
-    std::string geometryFileInternal = getSPARTADataPath( ) + "data.shape";
-    std::string atmosphereSpeciesFile = getSPARTADataPath( ) + "atmosphere.species";
-    std::string atmosphereCollisionModelFile = getSPARTADataPath( ) + "atmosphere.vss";
+    // Create analysis object.
+    std::vector< std::vector< double > > independentVariableDataPoints;
+    independentVariableDataPoints.resize( 3 );
+//    independentVariableDataPoints[ 0 ] = getDefaultRarefiedFlowAltitudePoints( "Mars" );
+//    independentVariableDataPoints[ 1 ] = getDefaultRarefiedFlowMachPoints( "High" );
+//    independentVariableDataPoints[ 2 ] = getDefaultRarefiedFlowAngleOfAttackPoints( );
+    independentVariableDataPoints[ 0 ] = { 100e3 };
+    independentVariableDataPoints[ 1 ] = { 17.1 };
+    independentVariableDataPoints[ 2 ] = { 0.0 * PI / 180.0 };
 
-    // Define simulation variables
-    double gridSpacing = 0.25;
-    double simulatedParticlesPerCell = 15;
-    std::vector< double > simulationAnglesOfAttack = { -75.0, -60.0, -45.0, -30.0, -25.0, -20.0, -15.0, -10.0, -5.0,
-                                                       0.0, 5.0, 10.0, 15.0, 20.0, 25.0, 30.0, 45.0, 60.0, 75.0 };
-    std::vector< double > simulationAnglesOfSideslip = { 0.0 };
-    std::vector< double > simulationMolecularSpeedRatios = { 1.0 };
-//    { 1.0, 2.5, 5.0, 10.0, 25.0, 50.0, 100.0 };
+    // Generate database of aerodynamic coefficients.
+    RarefiedFlowAnalysis coefficientInterface = RarefiedFlowAnalysis(
+                SPARTAExecutable,
+                independentVariableDataPoints,
+                boost::make_shared< TabulatedAtmosphere >( tabulatedAtmosphere ),
+                simulationGases,
+                geometryFileUser,
+                referenceArea,
+                referenceLength,
+                referenceAxis,
+                momentReferencePoint,
+                0.25,
+                17.5,
+                wallTemperature,
+                accomodationCoefficient );
 
-    /////////////////////////////////////////////////////////////////////////////////////////////////////////
-    ///////////////////////            READ SHAPE FILE               ////////////////////////////////////////
-    /////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Write to files
+    std::map< int, std::string > fileNamesMap;
+    fileNamesMap[ 0 ] = input_output::getSpartaDataPath( ) + "coefficients/Cd.dat";
+    fileNamesMap[ 1 ] = input_output::getSpartaDataPath( ) + "coefficients/Cs.dat";
+    fileNamesMap[ 2 ] = input_output::getSpartaDataPath( ) + "coefficients/Cl.dat";
+    fileNamesMap[ 3 ] = input_output::getSpartaDataPath( ) + "coefficients/Cm1.dat";
+    fileNamesMap[ 4 ] = input_output::getSpartaDataPath( ) + "coefficients/Cm.dat";
+    fileNamesMap[ 5 ] = input_output::getSpartaDataPath( ) + "coefficients/Cm3.dat";
+    coefficientInterface.saveAerodynamicCoefficientsTables( fileNamesMap );
 
-    // Extract simulation box data from shape file
+//    // Test basic properties of coefficient generator
+//    std::cout << "Independent variables check: " << std::endl;
+//    std::cout << coefficientInterface.getIndependentVariableNames( ).size( ) - 3 << std::endl;
+//    std::cout << coefficientInterface.getIndependentVariableName( 0 ) << " " << altitude_dependent << std::endl;
+//    std::cout << coefficientInterface.getIndependentVariableName( 1 ) << " " << mach_number_dependent << std::endl;
+//    std::cout << coefficientInterface.getIndependentVariableName( 2 ) << " " << angle_of_attack_dependent << std::endl;
 
-    // Initialize output vectors
-    Eigen::Matrix< double, Eigen::Dynamic, 3 > shapePoints;
-    Eigen::Matrix< int, Eigen::Dynamic, 3 > shapeTriangles;
-    int numberOfPoints = 0;
-    int numberOfTriangles = 0;
-    {
-        // Open file and create file stream.
-        std::fstream stream( geometryFileUser.c_str( ), std::ios::in );
+//    bool isVariableIndexTooHigh = 0;
+//    try
+//    {
+//        coefficientInterface.getIndependentVariableName( 3 );
+//    }
+//    catch ( std::runtime_error )
+//    {
+//        isVariableIndexTooHigh = 1;
+//    }
+//    std::cout << isVariableIndexTooHigh << std::endl << std::endl;
 
-        // Check if file opened correctly.
-        if ( stream.fail( ) )
-        {
-            throw std::runtime_error( "Data file could not be opened: " + geometryFileUser );
-        }
+//    // Allocate memory for independent variables to pass to analysis for retrieval.
+//    boost::array< int, 3 > independentVariables;
+//    independentVariables[ 0 ] = 0;
+//    independentVariables[ 1 ] = 0;
+//    independentVariables[ 2 ] = 0;
+//    std::vector< double > independentVariablesVector( 3 );
+//    std::vector< double > interpolatingIndependentVariablesVector( 3 );
+//    const double expectedValueOfForceCoefficient = 0.0;
 
-        // Initialize booleans that specifies once parts of file have been passed.
-        bool isNumberOfPointsPassed = false;
-        bool isNumberOfTrianglesPassed = false;
-        bool isListOfPointsPassed = false;
+//    // Declare local test variables.
+//    Eigen::Vector6d aerodynamicCoefficients_ = Eigen::Vector6d::Zero( );
+//    double forceCoefficient_;
 
-        // Line based parsing
-        std::string line;
-        std::vector< std::string > vectorOfIndividualStrings;
+//    // Iterate over all angles of attack to verify sphere coefficients. Total force coefficient
+//    // should be one; all moment coefficients should be zero.
+//    // The functionality is tested directly from the generator, as well as from the
+//    // coefficient interface, both interpolated at the nodes, and halfway between the nodes.
+//    for ( int i = 0; i < coefficientInterface.getNumberOfValuesOfIndependentVariable( 0 ); i++ )
+//    {
+//        independentVariables[ 0 ] = i;
+//        independentVariablesVector[ 0 ] = coefficientInterface.getIndependentVariablePoint( 0, i );
+//        if ( i < coefficientInterface.getNumberOfValuesOfIndependentVariable( 0 ) - 1 )
+//        {
+//            interpolatingIndependentVariablesVector[ 0 ] =
+//                    coefficientInterface.getIndependentVariablePoint( 0, i ) + 0.5 * (
+//                        coefficientInterface.getIndependentVariablePoint( 0, i + 1 ) -
+//                        coefficientInterface.getIndependentVariablePoint( 0, i ) );
+//        }
 
-        // Read file line-by-line
-        int numberOfPointsParsed = 0;
-        int numberOfTrianglesParsed = 0;
-        while ( !stream.fail( ) && !stream.eof( ) )
-        {
-            // Get line from stream
-            std::getline( stream, line );
-
-            // Trim input string (removes all leading and trailing whitespaces).
-            boost::algorithm::trim( line );
-
-            // Skip empty and comment lines
-            if ( line.size( ) > 0 && !( line.at( 0 ) == '#' ) )
-            {
-                // Split string into multiple strings, each containing one element from a line from the data file.
-                boost::algorithm::split( vectorOfIndividualStrings,
-                                         line,
-                                         boost::algorithm::is_any_of( "\t ;, " ),
-                                         boost::algorithm::token_compress_on );
-
-                // If this is the first line that is read, it should contain the number of points
-                if ( !isNumberOfPointsPassed )
-                {
-                    if ( vectorOfIndividualStrings.size( ) != 2 )
-                    {
-                        throw std::runtime_error( "Error when reading multi-array, expected number of points." );
-                    }
-                    numberOfPoints = std::stoi( vectorOfIndividualStrings.at( 0 ) );
-                    isNumberOfPointsPassed = true;
-                }
-                // If this is the first line that is read, it should contain the number of triangles
-                else if ( !isNumberOfTrianglesPassed )
-                {
-                    if ( vectorOfIndividualStrings.size( ) != 2 )
-                    {
-                        throw std::runtime_error( "Error when reading multi-array, expected number of triangles." );
-                    }
-                    numberOfTriangles = std::stoi( vectorOfIndividualStrings.at( 0 ) );
-                    isNumberOfTrianglesPassed = true;
-                }
-                else if ( !isListOfPointsPassed )
-                {
-                    if ( vectorOfIndividualStrings.at( 0 ) != "Points" )
-                    {
-                        // Check line consistency
-                        if ( vectorOfIndividualStrings.size( ) != static_cast< unsigned int >( 4 ) )
-                        {
-                            throw std::runtime_error(
-                                        "Error on data line " + std::to_string( numberOfPointsParsed ) +
-                                        " found " + std::to_string( vectorOfIndividualStrings.size( ) ) +
-                                        " columns, but expected " + std::to_string( 4 ) );
-                        }
-                        else
-                        {
-                            // Parse data from current line into output matrix.
-                            for ( unsigned int i = 0; i < ( vectorOfIndividualStrings.size( ) - 1 ); i++ )
-                            {
-                                shapePoints( numberOfPointsParsed, i ) = std::stod( vectorOfIndividualStrings.at( i + 1 ) );
-                            }
-                            numberOfPointsParsed++;
-                        }
-                    }
-
-                    if ( numberOfPointsParsed == numberOfPoints )
-                    {
-                        isListOfPointsPassed = true;
-                    }
-                }
-                else if ( isListOfPointsPassed )
-                {
-                    if ( vectorOfIndividualStrings.at( 0 ) != "Triangles" )
-                    {
-                        // Check line consistency
-                        if ( vectorOfIndividualStrings.size( ) != static_cast< unsigned int >( 4 ) )
-                        {
-                            throw std::runtime_error(
-                                        "Error on data line " + std::to_string( numberOfTrianglesParsed ) +
-                                        " found " + std::to_string( vectorOfIndividualStrings.size( ) ) +
-                                        " columns, but expected " + std::to_string( 4 ) );
-                        }
-                        else
-                        {
-                            // Parse data from current line into output matrix.
-                            for ( unsigned int i = 0; i < ( vectorOfIndividualStrings.size( ) - 1 ); i++ )
-                            {
-                                shapeTriangles( numberOfTrianglesParsed, i ) = std::stod( vectorOfIndividualStrings.at( i + 1 ) );
-                            }
-                            numberOfTrianglesParsed++;
-                        }
-                    }
-
-                    if ( numberOfTrianglesParsed > numberOfTriangles )
-                    {
-                        throw std::runtime_error( "Number of triangles in file does not match file header." );
-                    }
-                }
-
-                // Allocate memory for point and triangle matrices.
-                if ( isNumberOfPointsPassed && isNumberOfTrianglesPassed )
-                {
-                    // Check input consistency
-                    if ( ( numberOfPoints == 0 ) || ( numberOfTriangles == 0 ) )
-                    {
-                        throw std::runtime_error( "Error when reading shape file, expected to find a non-zero number of points and triangles." );
-                    }
-                    else
-                    {
-                        // Define size of output vectors
-                        shapePoints.resize( numberOfPoints, 3 );
-                        shapeTriangles.resize( numberOfTriangles, 3 );
-                    }
-                }
-            }
-        }
-    }
-
-    // Get maximum and minimum values in each dimension
-    Eigen::Vector3d maximumDimensions = shapePoints.colwise( ).maxCoeff( );
-    Eigen::Vector3d minimumDimensions = shapePoints.colwise( ).minCoeff( );
-    maximumDimensions += 0.5 * maximumDimensions; // add extra space around shape
-    minimumDimensions += 0.5 * minimumDimensions; // add extra space around shape
-
-    // Compute normal to surface elements, area of surface elements and moment arm values
-    Eigen::Matrix< double, 3, Eigen::Dynamic > elementSurfaceNormal;
-    Eigen::Matrix< double, 1, Eigen::Dynamic > elementSurfaceArea;
-    Eigen::Matrix< double, 3, Eigen::Dynamic > elementMomentArm;
-    elementSurfaceNormal.resize( 3, numberOfTriangles );
-    elementSurfaceArea.resize( 1, numberOfTriangles );
-    elementMomentArm.resize( 3, numberOfTriangles );
-    Eigen::Matrix3d currentVertices;
-    Eigen::Vector3d currentNormal;
-    Eigen::Vector3d currentCentroid;
-    double currentNormalNorm;
-    for ( int i = 0; i < numberOfTriangles; i++ )
-    {
-        // Compute properties of current surface element
-        for ( unsigned int j = 0; j < 3; j++ )
-        {
-            currentVertices.row( j ) = shapePoints.row( shapeTriangles( i, j ) - 1 );
-        }
-        currentNormal = ( currentVertices.row( 1 ) - currentVertices.row( 0 ) ).cross(
-                    currentVertices.row( 2 ) - currentVertices.row( 0 ) );
-        currentNormalNorm = currentNormal.norm( );
-        currentCentroid = currentVertices.colwise( ).sum( ) / 3.0;
-
-        // Find normal, area and distance to reference point
-        elementSurfaceNormal.col( i ) = currentNormal / currentNormalNorm;
-        elementSurfaceArea( i ) = 0.5 * currentNormalNorm;
-        elementMomentArm.col( i ) = currentCentroid - momentReferencePoint;
-    }
-
-    // Compute cross-sectional area
-    Eigen::Vector3d shapeCrossSectionalArea;
-    for ( unsigned int i = 0; i < 3; i++ )
-    {
-        shapeCrossSectionalArea( i ) =
-                0.5 * elementSurfaceNormal.row( i ).cwiseAbs( ).dot( elementSurfaceArea );
-    }
-
-    /////////////////////////////////////////////////////////////////////////////////////////////////////////
-    ///////////////////////            EXTRACT ATMOSPHERE CONDITIONS ////////////////////////////////////////
-    /////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-    // Extract atmosphere conditions (turn into enum or struct?)
-    //      0 - density
-    //      1 - pressure
-    //      2 - temperature
-    //      3 - gas constant
-    //      4 - molar mass
-    //      5 - number density
-    std::vector< std::vector< double > > atmosphericConditions;
-    atmosphericConditions.resize( 6 );
-    for ( unsigned int i = 0; i < simulationAltitudes.size( ); i++ )
-    {
-        atmosphericConditions.at( 0 ).push_back( atmosphereModel.getDensity( simulationAltitudes.at( i ) ) );
-        atmosphericConditions.at( 1 ).push_back( atmosphereModel.getPressure( simulationAltitudes.at( i ) ) );
-        atmosphericConditions.at( 2 ).push_back( atmosphereModel.getTemperature( simulationAltitudes.at( i ) ) );
-        atmosphericConditions.at( 3 ).push_back( atmosphereModel.getSpecificGasConstant( simulationAltitudes.at( i ) ) );
-        atmosphericConditions.at( 4 ).push_back( tudat::physical_constants::MOLAR_GAS_CONSTANT /
-                                                 atmosphericConditions.at( 3 ).at( i ) );
-        atmosphericConditions.at( 5 ).push_back( tudat::physical_constants::AVOGADRO_CONSTANT *
-                                                 atmosphericConditions.at( 0 ).at( i ) / atmosphericConditions.at( 4 ).at( i ) );
-    }
-    // add gases extraction
-
-    /////////////////////////////////////////////////////////////////////////////////////////////////////////
-    ///////////////////////            GET SIMULATION CONDITIONS     ////////////////////////////////////////
-    /////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-    // Simulation boundary and grid
-    Eigen::Vector6d simulationBoundaries;
-    for ( unsigned int i = 0; i < 3; i++ )
-    {
-        simulationBoundaries( 2 * i ) = minimumDimensions( i );
-        simulationBoundaries( 2 * i + 1 ) = maximumDimensions( i );
-    }
-    Eigen::Vector3d simulationGrid = ( maximumDimensions - minimumDimensions ) / gridSpacing;
-
-    // Convert molecular speed ratio to stream velocity and compute simulation time step and ratio of real to simulated variables
-    Eigen::Matrix< double, Eigen::Dynamic, Eigen::Dynamic > freeStreamVelocities;
-    Eigen::Matrix< double, Eigen::Dynamic, Eigen::Dynamic > simulationTimeStep;
-    Eigen::Matrix< double, Eigen::Dynamic, 1 > ratioOfRealToSimulatedParticles;
-    freeStreamVelocities.resize( simulationAltitudes.size( ), simulationMolecularSpeedRatios.size( ) );
-    simulationTimeStep.resize( simulationAltitudes.size( ), simulationMolecularSpeedRatios.size( ) );
-    ratioOfRealToSimulatedParticles.resize( simulationAltitudes.size( ), 1 );
-    for ( unsigned int h = 0; h < simulationAltitudes.size( ); h++ )
-    {
-        for ( unsigned int s = 0; s < simulationMolecularSpeedRatios.size( ); s++ )
-        {
-            freeStreamVelocities( h, s ) = simulationMolecularSpeedRatios.at( s ) * std::sqrt(
-                        2.0 * atmosphericConditions.at( 3 ).at( h ) * atmosphericConditions.at( 2 ).at( h ) );
-            simulationTimeStep( h, s ) = 0.1 * ( maximumDimensions( std::abs( referenceAxis ) ) -
-                                                 minimumDimensions( std::abs( referenceAxis ) ) ) /
-                    freeStreamVelocities( h, s );
-            // time step is taken as time it takes for a particle to travel for 10 % of the box
-        }
-        ratioOfRealToSimulatedParticles( h ) = atmosphericConditions.at( 5 ).at( h ) *
-                std::pow( gridSpacing, 3 ) / simulatedParticlesPerCell;
-    }
-
-    /////////////////////////////////////////////////////////////////////////////////////////////////////////
-    ///////////////////////            PROCESS FILES                 ////////////////////////////////////////
-    /////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-    // Initialize output variable
-    std::string inputTemplate;
-
-    // Open file and create file stream.
-    {
-        std::fstream stream( inputFileTemplate.c_str( ), std::ios::in );
-
-        // Check if file opened correctly.
-        if ( stream.fail( ) )
-        {
-            throw std::runtime_error( "Data file could not be opened: " + inputFileTemplate );
-        }
-
-        // Line based parsing
-        std::string line;
-
-        // Read file line-by-line
-        while ( !stream.fail( ) && !stream.eof( ) )
-        {
-            // Get line from stream
-            std::getline( stream, line );
-
-            // Trim input string (removes all leading and trailing whitespaces).
-            boost::algorithm::trim( line );
-
-            // Skip empty and comment lines
-            if ( line.size( ) > 0 && !( line.at( 0 ) == '#' ) )
-            {
-                // Append line to string
-                inputTemplate.append( line + "\n" );
-            }
-        }
-    }
-
-    // Copy input shape file to default name
-    std::string commandString = "cp " + geometryFileUser + " " + geometryFileInternal;
-    std::system( commandString.c_str( ) );
-
-    /////////////////////////////////////////////////////////////////////////////////////////////////////////
-    ///////////////////////            START SPARTA ANALYSIS         ////////////////////////////////////////
-    /////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-    // Generate command string for SPARTA
-    std::cout << "Initiating SPARTA simulation. This may take a while." << std::endl;
-    std::string runSPARTACommandString = "cd " + getSPARTADataPath( ) + "; echo off; " +
-            SPARTAExecutable +
-            " -in " + inputFile + "; echo on";
-    // "mpirun -np " + std::to_string( numberOfCores ) + " " +
-
-    // Loop over simulation parameters and run SPARTA
-    boost::multi_array< Eigen::Vector6d, 3 > aerodynamicCoefficients( boost::extents[ simulationAltitudes.size( ) ][
-                simulationMolecularSpeedRatios.size( ) ][ simulationAnglesOfAttack.size( ) ] );
-    std::string anglesOfAttack;
-    Eigen::Vector3d velocityVector;
-    for ( unsigned int h = 0; h < simulationAltitudes.size( ); h++ )
-    {
-        for ( unsigned int s = 0; s < simulationMolecularSpeedRatios.size( ); s++ )
-        {
-            // Get velocity vector
-            velocityVector = Eigen::Vector3d::Zero( );
-            velocityVector( std::abs( referenceAxis ) ) = ( std::signbit( referenceAxis ) ? 1.0 : -1.0 ) *
-                    freeStreamVelocities( h, s );
-
-            // Get angles of attack string
-            for ( double a : simulationAnglesOfAttack )
-            {
-                anglesOfAttack += printToStringWithPrecision( a, 0 ) + " ";
-            }
-
-            // Print to file
-            FILE * fileIdentifier = std::fopen( inputFile.c_str( ), "w" );
-            std::fprintf( fileIdentifier, inputTemplate.c_str( ), simulationBoundaries( 0 ), simulationBoundaries( 1 ),
-                          simulationBoundaries( 2 ), simulationBoundaries( 3 ), simulationBoundaries( 4 ),
-                          simulationBoundaries( 5 ), simulationGrid( 0 ), simulationGrid( 1 ), simulationGrid( 2 ),
-                          atmosphericConditions.at( 5 ).at( h ), ratioOfRealToSimulatedParticles( h ), simulationGases.c_str( ),
-                          simulationGases.c_str( ), velocityVector( 0 ), velocityVector( 1 ), velocityVector( 2 ),
-                          simulationGases.c_str( ), atmosphericConditions.at( 2 ).at( h ), anglesOfAttack.c_str( ),
-                          wallTemperature, accomodationCoefficient, simulationTimeStep( h, s ), outputDirectory.c_str( ) );
-            std::fclose( fileIdentifier );
-
-            // Run SPARTA
-//            int systemStatus = std::system( runSPARTACommandString.c_str( ) );
-//            if ( systemStatus != 0 )
+//        for ( int j = 0; j <
+//              coefficientInterface.getNumberOfValuesOfIndependentVariable( 1 ); j++ )
+//        {
+//            independentVariables[ 1 ] = j;
+//            independentVariablesVector[ 1 ] =
+//                    coefficientInterface.getIndependentVariablePoint( 1, j );
+//            if ( j < coefficientInterface.getNumberOfValuesOfIndependentVariable( 1 ) - 1 )
 //            {
-//                throw std::runtime_error( "Error: SPARTA simulation failed. See the log.sparta file for more details." );
+//                interpolatingIndependentVariablesVector[ 1 ] =
+//                        coefficientInterface.getIndependentVariablePoint( 1, j ) + 0.5 * (
+//                            coefficientInterface.getIndependentVariablePoint( 1, j + 1 ) -
+//                            coefficientInterface.getIndependentVariablePoint( 1, j ) );
 //            }
 
-            /////////////////////////////////////////////////////////////////////////////////////////////////////////
-            ///////////////////////            PROCESS RESULTS               ////////////////////////////////////////
-            /////////////////////////////////////////////////////////////////////////////////////////////////////////
+//            for ( int k = 0; k <
+//                  coefficientInterface.getNumberOfValuesOfIndependentVariable( 2 ); k++ )
+//            {
+//                independentVariables[ 2 ] = k;
+//                independentVariablesVector[ 2 ] =
+//                        coefficientInterface.getIndependentVariablePoint( 2, k );
+//                if ( k < coefficientInterface.getNumberOfValuesOfIndependentVariable( 2 ) - 1 )
+//                {
+//                    interpolatingIndependentVariablesVector[ 2 ] =
+//                            coefficientInterface.getIndependentVariablePoint( 2, k ) + 0.5 * (
+//                                coefficientInterface.getIndependentVariablePoint( 2, k + 1 ) -
+//                                coefficientInterface.getIndependentVariablePoint( 2, k ) );
+//                }
+//                std::cout << std::endl << "I: " << i << " J: " << j << " K: " << k << std::endl;
 
-            // Loop over angles of attack
-            std::string temporaryOutputFile;
-            std::vector< std::string > outputFileExtensions = { ".400", ".600", ".800", ".1000" };
-            Eigen::Matrix< double, Eigen::Dynamic, 7 > outputMatrix;
-            Eigen::Matrix< double, 3, Eigen::Dynamic > meanPressureValues;
-            Eigen::Matrix< double, 3, Eigen::Dynamic > meanShearValues;
-            meanPressureValues.resize( 3, numberOfTriangles );
-            meanShearValues.resize( 3, numberOfTriangles );
-            for ( unsigned int a = 0; a < simulationAnglesOfAttack.size( ); a++ )
-            {
-                // Get file name
-                temporaryOutputFile = outputPath + "/" + printToStringWithPrecision(
-                            simulationAnglesOfAttack.at( a ), 0 ) + ".coeff";
+//                // Retrieve aerodynamic coefficients.
+//                aerodynamicCoefficients_ =
+//                        coefficientInterface.getAerodynamicCoefficientsDataPoint(
+//                            independentVariables );
+//                forceCoefficient_ = ( aerodynamicCoefficients_.head( 3 ) ).norm( );
 
-                // Read output files and compute mean pressure and shear force values
-                meanPressureValues.setZero( );
-                meanShearValues.setZero( );
-                for ( unsigned int i = 0; i < outputFileExtensions.size( ); i++ )
-                {
-                    outputMatrix = readMatrixFromFile( temporaryOutputFile + outputFileExtensions.at( i ), "\t ;,", "%", 9 );
-                    for ( unsigned int j = 0; j < 3; j++ )
-                    {
-                        meanPressureValues.row( j ) += outputMatrix.col( j + 1 ).transpose( );
-                        meanShearValues.row( j ) += outputMatrix.col( j + 4 ).transpose( );
-                    }
-               }
-                meanPressureValues /= outputFileExtensions.size( );
-                meanShearValues /= outputFileExtensions.size( );
+//                // Test if the computed force coefficient corresponds to the expected value
+//                // within the specified tolerance.
+//                std::cout << std::endl << "1: " << forceCoefficient_ - expectedValueOfForceCoefficient << std::endl;
 
-                // Convert pressure and shear forces to coefficients
-                aerodynamicCoefficients[ h ][ s ][ a ] = computeAerodynamicCoefficientsFromPressureShear(
-                            meanPressureValues,
-                            meanShearValues,
-                            atmosphericConditions.at( 0 ).at( h ), // density
-                            atmosphericConditions.at( 1 ).at( h ), // pressure
-                            freeStreamVelocities( h, s ),
-                            elementSurfaceNormal,
-                            elementSurfaceArea,
-                            elementMomentArm,
-                            shapeCrossSectionalArea( std::abs( referenceAxis ) ),
-                            maximumDimensions( 0 ) );
-                std::cout << std::endl << "Altitude: " << simulationAltitudes.at( h ) << std::endl
-                          << "Speed Ratio: " << simulationMolecularSpeedRatios.at( s ) << std::endl
-                          << "Angle of Attack: " << simulationAnglesOfAttack.at( a ) << std::endl
-                          << "Coefficients: " << aerodynamicCoefficients[ h ][ s ][ a ].transpose( ) << std::endl;
-            }
-        }
-        std::cout << std::endl;
-    }
-    std::cout << "Here." << std::endl;
+//                // Test if the computed moment coefficients correspond to the expected value (0.0)
+//                // within the specified tolerance.
+//                std::cout << "2: " << aerodynamicCoefficients_( 3 ) << std::endl;
+//                std::cout << "3: " << aerodynamicCoefficients_( 4 ) << std::endl;
+//                std::cout << "4: " << aerodynamicCoefficients_( 5 ) << std::endl;
 
-//    // Clean up results folder
-//    commandString = "rm " + outputPath + "/*"; // overwrite
-//    std::system( commandString.c_str( ) );
+//                // Retrieve aerodynamic coefficients from coefficient interface.
+//                coefficientInterface.updateCurrentCoefficients( independentVariablesVector );
+
+//                aerodynamicCoefficients_ =
+//                        coefficientInterface.getCurrentAerodynamicCoefficients( );
+//                forceCoefficient_ = ( aerodynamicCoefficients_.head( 3 ) ).norm( );
+
+//                // Test if the computed force coefficient corresponds to the expected value
+//                // within the specified tolerance.
+//                std::cout << std::endl << "5: " << forceCoefficient_ - expectedValueOfForceCoefficient << std::endl;
+
+//                // Test if the computed moment coefficients correspond to the expected value (0.0)
+//                // within the specified tolerance.
+//                std::cout << "6: " << aerodynamicCoefficients_( 3 ) << std::endl;
+//                std::cout << "7: " << aerodynamicCoefficients_( 4 ) << std::endl;
+//                std::cout << "8: " << aerodynamicCoefficients_( 5 ) << std::endl;
+
+//                // Retrieve aerodynamic coefficients from coefficient interface.
+//                coefficientInterface.updateCurrentCoefficients(
+//                            interpolatingIndependentVariablesVector );
+
+//                aerodynamicCoefficients_ =
+//                        coefficientInterface.getCurrentAerodynamicCoefficients( );
+//                forceCoefficient_ = ( aerodynamicCoefficients_.head( 3 ) ).norm( );
+
+//                // Test if the computed force coefficient corresponds to the expected value
+//                // within the specified tolerance.
+//                std::cout << std::endl << "9: " << forceCoefficient_ - expectedValueOfForceCoefficient << std::endl;
+
+//                // Test if the computed moment coefficients correspond to the expected value (0.0)
+//                // within the specified tolerance.
+//                std::cout << "10: " << aerodynamicCoefficients_( 3 ) << std::endl;
+//                std::cout << "11: " << aerodynamicCoefficients_( 4 ) << std::endl;
+//                std::cout << "12: " << aerodynamicCoefficients_( 5 ) << std::endl;
+//            }
+//        }
+//    }
 
     // Final statement.
     // The exit code EXIT_SUCCESS indicates that the program was successfully executed.

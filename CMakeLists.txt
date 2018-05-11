@@ -251,3 +251,8 @@ add_executable(application_spartaTest "${SRCROOT}/spartaTest.cpp")
 setup_executable_target(application_spartaTest "${SRCROOT}")
 target_link_libraries(application_spartaTest tudat_aerodynamics tudat_input_output tudat_basic_mathematics
     tudat_basic_astrodynamics ${Boost_LIBRARIES} )
+
+# Add rotational motion test
+add_executable(application_rotationTest "${SRCROOT}/rotationTest.cpp")
+setup_executable_target(application_rotationTest "${SRCROOT}")
+target_link_libraries(application_rotationTest ${TUDAT_APPLICATION_PROPAGATION_LIBRARIES} ${Boost_LIBRARIES} )

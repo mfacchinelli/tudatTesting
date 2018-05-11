@@ -331,7 +331,7 @@ int main( )
         else if ( propagatorType == 4 )
         {
             usmIntegrationResult[ stateIterator->first ] =
-                    convertCartesianToUnifiedStateModelModifiedRodriguesParametersElements(
+                    convertCartesianToUnifiedStateModelModifiedRodriguesParameterElements(
                         currentCartesianState, marsGravitationalParameter );
         }
         else if ( propagatorType == 5 )

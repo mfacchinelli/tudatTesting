@@ -64,25 +64,30 @@ int main( )
 
     // Predefine variables
     double simulationDuration = 0.0;
-    std::vector< double > constantTimeStep;    
+    std::vector< double > constantTimeStep;
     std::string simulationCentralBody;
     int limitingSphericalHarminics;
     Eigen::Vector6d SatelliteInitialStateInKeplerianElements;
+
+    // Variables that can be optionally overwritten
+    std::vector< int > tolerances = { -13, -12, -11, -10, -9, -8, -7 };
+    int referenceTolerance = -15;
 
     // Select case
     //      0: Aerocapture
     //      1: Full aerobraking
     //      2: Interplanetary trajectory
     //      3: Circular orbit at LEO (Low Earth Orbit)
-    int testCase = 1;
-    std::vector< std::string > pathAdditionTestCase = { "aero", "aero_full", "inter", "vittaldev" };
+    //      4: Molniya orbit
+    int testCase = 0;
+    std::vector< std::string > pathAdditionTestCase = { "aero", "aero_full", "inter", "circ", "moln" };
     switch ( testCase )
     {
     case 0: // Aerocapture
     {
         // Set simulation time settings
         simulationDuration = 0.625 * physical_constants::JULIAN_DAY;
-        constantTimeStep = { 1.0, 5.0, 10.0, 25.0, 50.0, 100.0 };
+        constantTimeStep = { 0.1, 1.0, 5.0, 10.0, 25.0, 50.0, 75.0, 100.0, 150.0, 200.0 };
 
         // Set simulation central body
         simulationCentralBody = "Mars";
@@ -92,33 +97,50 @@ int main( )
         SatelliteInitialStateInKeplerianElements( semiMajorAxisIndex ) = -17305000.000000;
         SatelliteInitialStateInKeplerianElements( eccentricityIndex ) = 1.2;
         SatelliteInitialStateInKeplerianElements( inclinationIndex ) = convertDegreesToRadians( 93.0 );
-        SatelliteInitialStateInKeplerianElements( argumentOfPeriapsisIndex ) = convertDegreesToRadians( 158.7 );
-        SatelliteInitialStateInKeplerianElements( longitudeOfAscendingNodeIndex ) = convertDegreesToRadians( 23.4 );
+        SatelliteInitialStateInKeplerianElements( longitudeOfAscendingNodeIndex ) = convertDegreesToRadians( 158.7 );
+        SatelliteInitialStateInKeplerianElements( argumentOfPeriapsisIndex ) = convertDegreesToRadians( 23.4 );
         SatelliteInitialStateInKeplerianElements( trueAnomalyIndex ) = convertDegreesToRadians( 230.0 );
         break;
     }
     case 1: // Full aerobraking
     {
         // Set simulation time settings.
-        simulationDuration = 100.0 * physical_constants::JULIAN_DAY;
-        constantTimeStep = { 10.0, 25.0, 50.0, 75.0, 100.0, 150.0, 200.0, 300.0 };
+        simulationDuration = 150.0 * physical_constants::JULIAN_DAY;
+        constantTimeStep = { 20.0, 30.0, 40.0, 50.0, 75.0, 100.0, 150.0, 200.0, 250.0, 300.0 };
 
         // Set simulation central body
         simulationCentralBody = "Mars";
         limitingSphericalHarminics = 21;
 
         // Initial conditions
-        SatelliteInitialStateInKeplerianElements( semiMajorAxisIndex ) = 27198500;
-        SatelliteInitialStateInKeplerianElements( eccentricityIndex ) = 0.871280;
+        SatelliteInitialStateInKeplerianElements( semiMajorAxisIndex ) = 27201000;
+        SatelliteInitialStateInKeplerianElements( eccentricityIndex ) = 0.871108;
         SatelliteInitialStateInKeplerianElements( inclinationIndex ) = convertDegreesToRadians( 93.0 );
-        SatelliteInitialStateInKeplerianElements( argumentOfPeriapsisIndex ) = convertDegreesToRadians( 158.7 );
-        SatelliteInitialStateInKeplerianElements( longitudeOfAscendingNodeIndex ) = convertDegreesToRadians( 23.4 );
+        SatelliteInitialStateInKeplerianElements( longitudeOfAscendingNodeIndex ) = convertDegreesToRadians( 158.7 );
+        SatelliteInitialStateInKeplerianElements( argumentOfPeriapsisIndex ) = convertDegreesToRadians( 23.4 );
         SatelliteInitialStateInKeplerianElements( trueAnomalyIndex ) = convertDegreesToRadians( 180.0 );
         break;
     }
     case 2: // Interplanetary trajectory
     {
+        // Set simulation time settings.
+        simulationDuration = 50.0 * physical_constants::JULIAN_DAY;
+        constantTimeStep = { 20.0, 30.0, 40.0, 50.0, 75.0, 100.0, 150.0, 200.0, 250.0, 300.0 };
+
+        // Set simulation central body
         simulationCentralBody = "Sun";
+
+        // Use less stringent tolerances
+        tolerances = { -11, -10, -9, -8, -7, -6, -5 };
+        referenceTolerance = -13;
+
+        // Initial conditions
+        SatelliteInitialStateInKeplerianElements( semiMajorAxisIndex ) = 845508000;
+        SatelliteInitialStateInKeplerianElements( eccentricityIndex ) = 0.059136;
+        SatelliteInitialStateInKeplerianElements( inclinationIndex ) = convertDegreesToRadians( 2.5 );
+        SatelliteInitialStateInKeplerianElements( longitudeOfAscendingNodeIndex ) = convertDegreesToRadians( 328.6 );
+        SatelliteInitialStateInKeplerianElements( argumentOfPeriapsisIndex ) = convertDegreesToRadians( 147.8 );
+        SatelliteInitialStateInKeplerianElements( trueAnomalyIndex ) = convertDegreesToRadians( 0.0 );
         break;
     }
     case 3: // Vittaldev circular orbit at LEO
@@ -132,11 +154,30 @@ int main( )
         limitingSphericalHarminics = 2;
 
         // Initial conditions
-        SatelliteInitialStateInKeplerianElements( semiMajorAxisIndex ) = 6936000;
+        SatelliteInitialStateInKeplerianElements( semiMajorAxisIndex ) = 6936000.0;
         SatelliteInitialStateInKeplerianElements( eccentricityIndex ) = 0.0;
         SatelliteInitialStateInKeplerianElements( inclinationIndex ) = convertDegreesToRadians( 28.5 );
-        SatelliteInitialStateInKeplerianElements( argumentOfPeriapsisIndex ) = convertDegreesToRadians( 194.8 );
-        SatelliteInitialStateInKeplerianElements( longitudeOfAscendingNodeIndex ) = convertDegreesToRadians( 272.3 );
+        SatelliteInitialStateInKeplerianElements( longitudeOfAscendingNodeIndex ) = convertDegreesToRadians( 194.8 );
+        SatelliteInitialStateInKeplerianElements( argumentOfPeriapsisIndex ) = convertDegreesToRadians( 272.3 );
+        SatelliteInitialStateInKeplerianElements( trueAnomalyIndex ) = convertDegreesToRadians( 0.0 );
+        break;
+    }
+    case 4: // Vittaldev Molniya orbit
+    {
+        // Set simulation time settings.
+        simulationDuration = 25.0 * physical_constants::JULIAN_DAY;
+        constantTimeStep = { 20.0, 30.0, 40.0, 50.0, 75.0, 100.0, 150.0, 200.0, 250.0, 300.0 };
+
+        // Set simulation central body
+        simulationCentralBody = "Earth";
+        limitingSphericalHarminics = 2;
+
+        // Initial conditions
+        SatelliteInitialStateInKeplerianElements( semiMajorAxisIndex ) = 26559000.0;
+        SatelliteInitialStateInKeplerianElements( eccentricityIndex ) = 0.70;
+        SatelliteInitialStateInKeplerianElements( inclinationIndex ) = convertDegreesToRadians( 63.2 );
+        SatelliteInitialStateInKeplerianElements( longitudeOfAscendingNodeIndex ) = convertDegreesToRadians( 206.3 );
+        SatelliteInitialStateInKeplerianElements( argumentOfPeriapsisIndex ) = convertDegreesToRadians( 281.6 );
         SatelliteInitialStateInKeplerianElements( trueAnomalyIndex ) = convertDegreesToRadians( 0.0 );
         break;
     }
@@ -185,6 +226,7 @@ int main( )
         break;
     }
     case 3:
+    case 4:
     {
         bodiesToCreate.push_back( "Sun" );
         bodiesToCreate.push_back( simulationCentralBody );
@@ -236,6 +278,7 @@ int main( )
         break;
     }
     case 3:
+    case 4:
     {
         bodySettings[ simulationCentralBody ]->gravityFieldSettings = boost::make_shared<
                 FromFileSphericalHarmonicsGravityFieldSettings >( ggm02s );
@@ -307,6 +350,7 @@ int main( )
     case 0:
     case 1:
     case 3:
+    case 4:
     {
         bool keplerOrbit = false;
         if ( keplerOrbit )
@@ -333,10 +377,14 @@ int main( )
     }
     case 2:
     {
+        for( unsigned int i = 0; i < bodiesToCreate.size( ); i++ )
+        {
+            accelerationsOfSatellite[ bodiesToCreate.at( i ) ].push_back( boost::make_shared< AccelerationSettings >( central_gravity ) );
+        }
+        accelerationsOfSatellite[ "Sun" ].push_back( boost::make_shared< AccelerationSettings >( cannon_ball_radiation_pressure ) );
         break;
     }
     }
-
 
     // Add acceleration information
     accelerationMap[ "Satellite" ] = accelerationsOfSatellite;
@@ -380,7 +428,7 @@ int main( )
                 std::cout << "Integrator: " << integratorType + 1 << std::endl;
 
                 // Loop over tolerances and constant time step
-                valueLimit = ( propagatorType == 7 ) ? 1 : constantTimeStep.size( ); // only do one propagation
+                valueLimit = ( integratorType == 0 ) ? tolerances.size( ) : constantTimeStep.size( );
                 for ( int value = 0; value < valueLimit; value++ )
                 {
                     // Progress
@@ -401,7 +449,8 @@ int main( )
                         // Integrator
                         integratorSettings = boost::make_shared< RungeKuttaVariableStepSizeSettings< > >(
                                     rungeKuttaVariableStepSize, simulationStartEpoch, 25.0,
-                                    RungeKuttaCoefficients::rungeKuttaFehlberg78, 1e-3, 1e5, 1e-15, 1e-15 );
+                                    RungeKuttaCoefficients::rungeKuttaFehlberg78, 1e-5, 1e5,
+                                    std::pow( 10, referenceTolerance ), std::pow( 10, referenceTolerance ) );
                     }
                     else
                     {
@@ -413,10 +462,10 @@ int main( )
                         // Integrator
                         if ( integratorType == 0 )
                         {
-                            tolerance = std::pow( 10, value - 13 );
+                            tolerance = std::pow( 10, tolerances.at( value ) );
                             integratorSettings = boost::make_shared< RungeKuttaVariableStepSizeSettings< > >(
                                         rungeKuttaVariableStepSize, simulationStartEpoch, 100.0,
-                                        RungeKuttaCoefficients::rungeKuttaFehlberg56, 1e-1, 1e5,
+                                        RungeKuttaCoefficients::rungeKuttaFehlberg56, 1e-5, 1e5,
                                         tolerance, tolerance );
                         }
                         else if ( integratorType == 1 )
@@ -503,6 +552,12 @@ int main( )
                                                 std::numeric_limits< double >::digits10,
                                                 std::numeric_limits< double >::digits10,
                                                 "," );
+                    }
+
+                    // Break loop if reference propagator
+                    if ( propagatorType == 7 )
+                    {
+                        break;
                     }
                 }
             }
