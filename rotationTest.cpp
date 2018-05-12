@@ -11,30 +11,30 @@
 #include <Tudat/SimulationSetup/tudatSimulationHeader.h>
 #include "Tudat/Astrodynamics/Aerodynamics/UnitTests/testApolloCapsuleCoefficients.h"
 
-//! Get path for output directory.
-static inline std::string getOutputPath(
-        const std::string& extraDirectory = "" )
-{
-    // Declare file path string assigned to filePath.
-    // __FILE__ only gives the absolute path of the header file!
-    std::string filePath_( __FILE__ );
+////! Get path for output directory.
+//static inline std::string getOutputPath(
+//        const std::string& extraDirectory = "" )
+//{
+//    // Declare file path string assigned to filePath.
+//    // __FILE__ only gives the absolute path of the header file!
+//    std::string filePath_( __FILE__ );
 
-    // Strip filename from temporary string and return root-path string.
-    std::string reducedPath = filePath_.substr( 0, filePath_.length( ) -
-                                                std::string( "rotationTest.cpp" ).length( ) );
-    std::string outputPath = reducedPath + "SimulationOutput/";
-    if( extraDirectory != "" )
-    {
-        outputPath += extraDirectory;
-    }
+//    // Strip filename from temporary string and return root-path string.
+//    std::string reducedPath = filePath_.substr( 0, filePath_.length( ) -
+//                                                std::string( "rotationTest.cpp" ).length( ) );
+//    std::string outputPath = reducedPath + "SimulationOutput/";
+//    if( extraDirectory != "" )
+//    {
+//        outputPath += extraDirectory;
+//    }
 
-    if( outputPath.at( outputPath.size( ) - 1 ) != '/' )
-    {
-        outputPath += "/";
-    }
+//    if( outputPath.at( outputPath.size( ) - 1 ) != '/' )
+//    {
+//        outputPath += "/";
+//    }
 
-    return outputPath;
-}
+//    return outputPath;
+//}
 
 //! Execute propagation of orbit of Asterix around Mars.
 int main( )
@@ -65,7 +65,7 @@ int main( )
     // Set simulation time settings.
     const double simulationStartEpoch = 7.0 * tudat::physical_constants::JULIAN_YEAR +
             30.0 * 6.0 * tudat::physical_constants::JULIAN_DAY;
-    const double simulationEndEpoch = 30.0 + simulationStartEpoch;
+    const double simulationEndEpoch = 100.0 + simulationStartEpoch;
 //            1.0 * tudat::physical_constants::JULIAN_DAY + simulationStartEpoch;
 
     // Define body settings for simulation.
@@ -85,7 +85,7 @@ int main( )
     std::string atmosphereFile = getAtmosphereTablesPath( ) + "MCDMeanAtmosphere.dat";
     std::vector< AtmosphereDependentVariables > atmosphereDependentVariables = {
         density_dependent_atmosphere, pressure_dependent_atmosphere, temperature_dependent_atmosphere,
-        gas_constant_dependent_atmosphere, specific_heat_ratio_dependent_atmosphere };
+        gas_constant_dependent_atmosphere, specific_heat_ratio_dependent_atmosphere, molar_mass_dependent_atmosphere };
     bodySettings[ "Mars" ]->atmosphereSettings = boost::make_shared< TabulatedAtmosphereSettings >( atmosphereFile,
                                                                                                     atmosphereDependentVariables );
     NamedBodyMap bodyMap = createBodies( bodySettings );
@@ -105,26 +105,7 @@ int main( )
     inertiaTensor *= ( 0.1 * 25.0 * 5.0E3 );
     bodyMap[ "Satellite" ]->setBodyInertiaTensor( inertiaTensor );
 
-//    // Aerodynamic parameters
-//    const double referenceAreaAerodynamic = 37.5;
-
-//    // Aerodynamic coefficients from file
-//    std::map< int, std::string > aerodynamicCoefficientFiles;
-//    aerodynamicCoefficientFiles[ 0 ] = "/Users/Michele/Library/Mobile Documents/com~apple~CloudDocs/"
-//                                       "University/Master Thesis/Code/MATLAB/data/MRODragCoefficients.txt";
-//    aerodynamicCoefficientFiles[ 2 ] = "/Users/Michele/Library/Mobile Documents/com~apple~CloudDocs/"
-//                                       "University/Master Thesis/Code/MATLAB/data/MROLiftCoefficients.txt";
-
-//    // Create aerodynamic coefficient interface settings.
-//    boost::shared_ptr< AerodynamicCoefficientSettings > aerodynamicCoefficientSettings =
-//            simulation_setup::readTabulatedAerodynamicCoefficientsFromFiles(
-//                aerodynamicCoefficientFiles, referenceAreaAerodynamic,
-//                boost::assign::list_of( aerodynamics::angle_of_attack_dependent )( aerodynamics::altitude_dependent ),
-//                true, true );
-
-//    // Create and set aerodynamic coefficients object
-//    bodyMap[ "Satellite" ]->setAerodynamicCoefficientInterface(
-//                createAerodynamicCoefficientInterface( aerodynamicCoefficientSettings, "Satellite" ) );
+    // Create and set aerodynamic coefficients object
     bodyMap[ "Satellite" ]->setAerodynamicCoefficientInterface(
                 unit_tests::getApolloCoefficientInterface( ) );
 
@@ -180,7 +161,7 @@ int main( )
 
     // Set Keplerian elements for Satellie.
     Eigen::Vector6d initialStateInKeplerianElements;
-    initialStateInKeplerianElements( semiMajorAxisIndex ) = 3621000;
+    initialStateInKeplerianElements( semiMajorAxisIndex ) = 3721000;
     initialStateInKeplerianElements( eccentricityIndex ) = 0.006904;
     initialStateInKeplerianElements( inclinationIndex ) = unit_conversions::convertDegreesToRadians( 93.0 );
     initialStateInKeplerianElements( argumentOfPeriapsisIndex ) = unit_conversions::convertDegreesToRadians( 158.7 );
@@ -203,7 +184,7 @@ int main( )
 
     // Define termination conditions
     boost::shared_ptr< PropagationTerminationSettings > terminationSettings =
-            boost::make_shared< PropagationTimeTerminationSettings >( 250.0 );
+            boost::make_shared< PropagationTimeTerminationSettings >( simulationEndEpoch );
 
     // Create propagator settings for rotation.
     boost::shared_ptr< RotationalStatePropagatorSettings< double > > rotationalPropagatorSettings =
@@ -231,7 +212,7 @@ int main( )
 //                rungeKuttaVariableStepSize, simulationStartEpoch, 1.0,
 //                RungeKuttaCoefficients::rungeKuttaFehlberg56, 1e-3, 1e1, 1e-15, 1e-15 );
     boost::shared_ptr< IntegratorSettings< > > integratorSettings = boost::make_shared< IntegratorSettings< > > (
-                rungeKutta4, simulationStartEpoch, 15.0 );
+                rungeKutta4, simulationStartEpoch, 1.0 );
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ///////////////////////             PROPAGATE ORBIT            ////////////////////////////////////////////////////////
@@ -240,7 +221,9 @@ int main( )
     // Create simulation object and propagate dynamics.
     SingleArcDynamicsSimulator< > dynamicsSimulator(
                 bodyMap, integratorSettings, propagatorSettings, true, false, false );
-    std::map< double, Eigen::VectorXd > cartesianIntegrationResult = dynamicsSimulator.getEquationsOfMotionNumericalSolution( );
+    std::map< double, Eigen::VectorXd > fullIntegrationResult = dynamicsSimulator.getEquationsOfMotionNumericalSolution( );
+    std::map< double, Eigen::VectorXd > cartesianIntegrationResult;
+    std::map< double, Eigen::VectorXd > rotationIntegrationResult;
     std::map< double, Eigen::VectorXd > keplerianIntegrationResult;
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -248,12 +231,22 @@ int main( )
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     // Compute map of Kepler elements
+    Eigen::VectorXd currentFullState;
     Eigen::Vector6d currentCartesianState;
-    for( std::map< double, Eigen::VectorXd >::const_iterator stateIterator = cartesianIntegrationResult.begin( );
-         stateIterator != cartesianIntegrationResult.end( ); stateIterator++ )
+    std::cout << "Propagated states: " << std::endl;
+    for( std::map< double, Eigen::VectorXd >::const_iterator stateIterator = fullIntegrationResult.begin( );
+         stateIterator != fullIntegrationResult.end( ); stateIterator++ )
     {
+        // Get current states
+        currentFullState = stateIterator->second;
+        currentCartesianState = currentFullState.segment( 0, 6 );
+        std::cout << currentFullState.transpose( ) << std::endl;
+
+        // Store translational and rotational states
+        cartesianIntegrationResult[ stateIterator->first ] = currentCartesianState;
+        rotationIntegrationResult[ stateIterator->first ] = currentFullState.segment( 6, 7 );
+
         // Retrieve current Cartesian state (convert to Mars-centered frame if needed)
-        currentCartesianState = stateIterator->second;
         keplerianIntegrationResult[ stateIterator->first ] =
                 convertCartesianToKeplerianElements( currentCartesianState, marsGravitationalParameter );
     }
@@ -277,4 +270,3 @@ int main( )
     // The exit code EXIT_SUCCESS indicates that the program was successfully executed.
     return EXIT_SUCCESS;
 }
-

@@ -64,7 +64,7 @@ int main( )
     std::string tabulatedAtmosphereFile = getAtmosphereTablesPath( ) + "MCDMeanAtmosphere.dat";
     std::vector< AtmosphereDependentVariables > dependentVariables = {
         density_dependent_atmosphere, pressure_dependent_atmosphere, temperature_dependent_atmosphere,
-        gas_constant_dependent_atmosphere, specific_heat_ratio_dependent_atmosphere };
+        gas_constant_dependent_atmosphere, specific_heat_ratio_dependent_atmosphere, molar_mass_dependent_atmosphere };
     TabulatedAtmosphere tabulatedAtmosphere = TabulatedAtmosphere( tabulatedAtmosphereFile,
                                                                    dependentVariables );
 
@@ -113,12 +113,12 @@ int main( )
     // Create analysis object.
     std::vector< std::vector< double > > independentVariableDataPoints;
     independentVariableDataPoints.resize( 3 );
-//    independentVariableDataPoints[ 0 ] = getDefaultRarefiedFlowAltitudePoints( "Mars" );
-//    independentVariableDataPoints[ 1 ] = getDefaultRarefiedFlowMachPoints( "High" );
-//    independentVariableDataPoints[ 2 ] = getDefaultRarefiedFlowAngleOfAttackPoints( );
-    independentVariableDataPoints[ 0 ] = { 100e3 };
-    independentVariableDataPoints[ 1 ] = { 17.1 };
-    independentVariableDataPoints[ 2 ] = { 0.0 * PI / 180.0 };
+    independentVariableDataPoints[ 0 ] = getDefaultRarefiedFlowAltitudePoints( "Mars" );
+    independentVariableDataPoints[ 1 ] = getDefaultRarefiedFlowMachPoints( "Full" );
+    independentVariableDataPoints[ 2 ] = getDefaultRarefiedFlowAngleOfAttackPoints( );
+//    independentVariableDataPoints[ 0 ] = { 100e3 };
+//    independentVariableDataPoints[ 1 ] = { 17.1 };
+//    independentVariableDataPoints[ 2 ] = { 0.0 * PI / 180.0 };
 
     // Generate database of aerodynamic coefficients.
     RarefiedFlowAnalysis coefficientInterface = RarefiedFlowAnalysis(
@@ -134,7 +134,10 @@ int main( )
                 0.25,
                 17.5,
                 wallTemperature,
-                accomodationCoefficient );
+                accomodationCoefficient,
+                false,
+                "/usr/local/bin/mpirun",
+                numberOfCores );
 
     // Write to files
     std::map< int, std::string > fileNamesMap;
@@ -145,136 +148,6 @@ int main( )
     fileNamesMap[ 4 ] = input_output::getSpartaDataPath( ) + "coefficients/Cm.dat";
     fileNamesMap[ 5 ] = input_output::getSpartaDataPath( ) + "coefficients/Cm3.dat";
     coefficientInterface.saveAerodynamicCoefficientsTables( fileNamesMap );
-
-//    // Test basic properties of coefficient generator
-//    std::cout << "Independent variables check: " << std::endl;
-//    std::cout << coefficientInterface.getIndependentVariableNames( ).size( ) - 3 << std::endl;
-//    std::cout << coefficientInterface.getIndependentVariableName( 0 ) << " " << altitude_dependent << std::endl;
-//    std::cout << coefficientInterface.getIndependentVariableName( 1 ) << " " << mach_number_dependent << std::endl;
-//    std::cout << coefficientInterface.getIndependentVariableName( 2 ) << " " << angle_of_attack_dependent << std::endl;
-
-//    bool isVariableIndexTooHigh = 0;
-//    try
-//    {
-//        coefficientInterface.getIndependentVariableName( 3 );
-//    }
-//    catch ( std::runtime_error )
-//    {
-//        isVariableIndexTooHigh = 1;
-//    }
-//    std::cout << isVariableIndexTooHigh << std::endl << std::endl;
-
-//    // Allocate memory for independent variables to pass to analysis for retrieval.
-//    boost::array< int, 3 > independentVariables;
-//    independentVariables[ 0 ] = 0;
-//    independentVariables[ 1 ] = 0;
-//    independentVariables[ 2 ] = 0;
-//    std::vector< double > independentVariablesVector( 3 );
-//    std::vector< double > interpolatingIndependentVariablesVector( 3 );
-//    const double expectedValueOfForceCoefficient = 0.0;
-
-//    // Declare local test variables.
-//    Eigen::Vector6d aerodynamicCoefficients_ = Eigen::Vector6d::Zero( );
-//    double forceCoefficient_;
-
-//    // Iterate over all angles of attack to verify sphere coefficients. Total force coefficient
-//    // should be one; all moment coefficients should be zero.
-//    // The functionality is tested directly from the generator, as well as from the
-//    // coefficient interface, both interpolated at the nodes, and halfway between the nodes.
-//    for ( int i = 0; i < coefficientInterface.getNumberOfValuesOfIndependentVariable( 0 ); i++ )
-//    {
-//        independentVariables[ 0 ] = i;
-//        independentVariablesVector[ 0 ] = coefficientInterface.getIndependentVariablePoint( 0, i );
-//        if ( i < coefficientInterface.getNumberOfValuesOfIndependentVariable( 0 ) - 1 )
-//        {
-//            interpolatingIndependentVariablesVector[ 0 ] =
-//                    coefficientInterface.getIndependentVariablePoint( 0, i ) + 0.5 * (
-//                        coefficientInterface.getIndependentVariablePoint( 0, i + 1 ) -
-//                        coefficientInterface.getIndependentVariablePoint( 0, i ) );
-//        }
-
-//        for ( int j = 0; j <
-//              coefficientInterface.getNumberOfValuesOfIndependentVariable( 1 ); j++ )
-//        {
-//            independentVariables[ 1 ] = j;
-//            independentVariablesVector[ 1 ] =
-//                    coefficientInterface.getIndependentVariablePoint( 1, j );
-//            if ( j < coefficientInterface.getNumberOfValuesOfIndependentVariable( 1 ) - 1 )
-//            {
-//                interpolatingIndependentVariablesVector[ 1 ] =
-//                        coefficientInterface.getIndependentVariablePoint( 1, j ) + 0.5 * (
-//                            coefficientInterface.getIndependentVariablePoint( 1, j + 1 ) -
-//                            coefficientInterface.getIndependentVariablePoint( 1, j ) );
-//            }
-
-//            for ( int k = 0; k <
-//                  coefficientInterface.getNumberOfValuesOfIndependentVariable( 2 ); k++ )
-//            {
-//                independentVariables[ 2 ] = k;
-//                independentVariablesVector[ 2 ] =
-//                        coefficientInterface.getIndependentVariablePoint( 2, k );
-//                if ( k < coefficientInterface.getNumberOfValuesOfIndependentVariable( 2 ) - 1 )
-//                {
-//                    interpolatingIndependentVariablesVector[ 2 ] =
-//                            coefficientInterface.getIndependentVariablePoint( 2, k ) + 0.5 * (
-//                                coefficientInterface.getIndependentVariablePoint( 2, k + 1 ) -
-//                                coefficientInterface.getIndependentVariablePoint( 2, k ) );
-//                }
-//                std::cout << std::endl << "I: " << i << " J: " << j << " K: " << k << std::endl;
-
-//                // Retrieve aerodynamic coefficients.
-//                aerodynamicCoefficients_ =
-//                        coefficientInterface.getAerodynamicCoefficientsDataPoint(
-//                            independentVariables );
-//                forceCoefficient_ = ( aerodynamicCoefficients_.head( 3 ) ).norm( );
-
-//                // Test if the computed force coefficient corresponds to the expected value
-//                // within the specified tolerance.
-//                std::cout << std::endl << "1: " << forceCoefficient_ - expectedValueOfForceCoefficient << std::endl;
-
-//                // Test if the computed moment coefficients correspond to the expected value (0.0)
-//                // within the specified tolerance.
-//                std::cout << "2: " << aerodynamicCoefficients_( 3 ) << std::endl;
-//                std::cout << "3: " << aerodynamicCoefficients_( 4 ) << std::endl;
-//                std::cout << "4: " << aerodynamicCoefficients_( 5 ) << std::endl;
-
-//                // Retrieve aerodynamic coefficients from coefficient interface.
-//                coefficientInterface.updateCurrentCoefficients( independentVariablesVector );
-
-//                aerodynamicCoefficients_ =
-//                        coefficientInterface.getCurrentAerodynamicCoefficients( );
-//                forceCoefficient_ = ( aerodynamicCoefficients_.head( 3 ) ).norm( );
-
-//                // Test if the computed force coefficient corresponds to the expected value
-//                // within the specified tolerance.
-//                std::cout << std::endl << "5: " << forceCoefficient_ - expectedValueOfForceCoefficient << std::endl;
-
-//                // Test if the computed moment coefficients correspond to the expected value (0.0)
-//                // within the specified tolerance.
-//                std::cout << "6: " << aerodynamicCoefficients_( 3 ) << std::endl;
-//                std::cout << "7: " << aerodynamicCoefficients_( 4 ) << std::endl;
-//                std::cout << "8: " << aerodynamicCoefficients_( 5 ) << std::endl;
-
-//                // Retrieve aerodynamic coefficients from coefficient interface.
-//                coefficientInterface.updateCurrentCoefficients(
-//                            interpolatingIndependentVariablesVector );
-
-//                aerodynamicCoefficients_ =
-//                        coefficientInterface.getCurrentAerodynamicCoefficients( );
-//                forceCoefficient_ = ( aerodynamicCoefficients_.head( 3 ) ).norm( );
-
-//                // Test if the computed force coefficient corresponds to the expected value
-//                // within the specified tolerance.
-//                std::cout << std::endl << "9: " << forceCoefficient_ - expectedValueOfForceCoefficient << std::endl;
-
-//                // Test if the computed moment coefficients correspond to the expected value (0.0)
-//                // within the specified tolerance.
-//                std::cout << "10: " << aerodynamicCoefficients_( 3 ) << std::endl;
-//                std::cout << "11: " << aerodynamicCoefficients_( 4 ) << std::endl;
-//                std::cout << "12: " << aerodynamicCoefficients_( 5 ) << std::endl;
-//            }
-//        }
-//    }
 
     // Final statement.
     // The exit code EXIT_SUCCESS indicates that the program was successfully executed.
