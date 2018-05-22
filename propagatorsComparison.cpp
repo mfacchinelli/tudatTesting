@@ -79,7 +79,7 @@ int main( )
     //      2: Interplanetary trajectory
     //      3: Circular orbit at LEO (Low Earth Orbit)
     //      4: Molniya orbit
-    int testCase = 0;
+    int testCase = 5;
     std::vector< std::string > pathAdditionTestCase = { "aero", "aero_full", "inter", "circ", "moln" };
     switch ( testCase )
     {
@@ -105,7 +105,7 @@ int main( )
     case 1: // Full aerobraking
     {
         // Set simulation time settings.
-        simulationDuration = 150.0 * physical_constants::JULIAN_DAY;
+        simulationDuration = 100.0 * physical_constants::JULIAN_DAY;
         constantTimeStep = { 20.0, 30.0, 40.0, 50.0, 75.0, 100.0, 150.0, 200.0, 250.0, 300.0 };
 
         // Set simulation central body
@@ -113,12 +113,12 @@ int main( )
         limitingSphericalHarminics = 21;
 
         // Initial conditions
-        SatelliteInitialStateInKeplerianElements( semiMajorAxisIndex ) = 27201000;
-        SatelliteInitialStateInKeplerianElements( eccentricityIndex ) = 0.871108;
-        SatelliteInitialStateInKeplerianElements( inclinationIndex ) = convertDegreesToRadians( 93.0 );
-        SatelliteInitialStateInKeplerianElements( longitudeOfAscendingNodeIndex ) = convertDegreesToRadians( 158.7 );
-        SatelliteInitialStateInKeplerianElements( argumentOfPeriapsisIndex ) = convertDegreesToRadians( 23.4 );
-        SatelliteInitialStateInKeplerianElements( trueAnomalyIndex ) = convertDegreesToRadians( 180.0 );
+        SatelliteInitialStateInKeplerianElements( semiMajorAxisIndex ) = 27221000;
+        SatelliteInitialStateInKeplerianElements( eccentricityIndex ) = 0.869733;
+        SatelliteInitialStateInKeplerianElements( inclinationIndex ) = 0.0;//convertDegreesToRadians( 93.0 );
+        SatelliteInitialStateInKeplerianElements( longitudeOfAscendingNodeIndex ) = 0.0;//convertDegreesToRadians( 158.7 );
+        SatelliteInitialStateInKeplerianElements( argumentOfPeriapsisIndex ) = 0.0;//convertDegreesToRadians( 23.4 );
+        SatelliteInitialStateInKeplerianElements( trueAnomalyIndex ) = 0.0;//convertDegreesToRadians( 180.0 );
         break;
     }
     case 2: // Interplanetary trajectory
@@ -181,6 +181,25 @@ int main( )
         SatelliteInitialStateInKeplerianElements( trueAnomalyIndex ) = convertDegreesToRadians( 0.0 );
         break;
     }
+    case 5: // Vittaldev low-thrust orbit
+    {
+        // Set simulation time settings.
+        simulationDuration = 10.0 * physical_constants::JULIAN_DAY;
+        constantTimeStep = { 20.0, 30.0, 40.0, 50.0, 75.0, 100.0, 150.0, 200.0, 250.0, 300.0 };
+
+        // Set simulation central body
+        simulationCentralBody = "Earth";
+        limitingSphericalHarminics = 21;
+
+        // Initial conditions
+        SatelliteInitialStateInKeplerianElements( semiMajorAxisIndex ) = 6378.1363e3 + 1000e3;
+        SatelliteInitialStateInKeplerianElements( eccentricityIndex ) = 0.0;
+        SatelliteInitialStateInKeplerianElements( inclinationIndex ) = convertDegreesToRadians( 0.0 );
+        SatelliteInitialStateInKeplerianElements( longitudeOfAscendingNodeIndex ) = convertDegreesToRadians( 0.0 );
+        SatelliteInitialStateInKeplerianElements( argumentOfPeriapsisIndex ) = convertDegreesToRadians( 0.0 );
+        SatelliteInitialStateInKeplerianElements( trueAnomalyIndex ) = convertDegreesToRadians( 0.0 );
+        break;
+    }
     default:
     {
         std::cerr << "Mode not recognized." << std::endl;
@@ -227,6 +246,7 @@ int main( )
     }
     case 3:
     case 4:
+    case 5:
     {
         bodiesToCreate.push_back( "Sun" );
         bodiesToCreate.push_back( simulationCentralBody );
@@ -265,12 +285,15 @@ int main( )
             gas_constant_dependent_atmosphere, specific_heat_ratio_dependent_atmosphere };
         std::vector< AtmosphereIndependentVariables > atmosphereIndependentVariables = {
             longitude_dependent_atmosphere, latitude_dependent_atmosphere, altitude_dependent_atmosphere };
+        std::vector< interpolators::BoundaryInterpolationType > boundaryConditions = {
+            interpolators::use_boundary_value, interpolators::use_boundary_value, interpolators::use_default_value };
+        std::vector< double > extrapolationValues = { 0.0, 0.0, 186.813, 8183.0, 1.667 };
 
         bodySettings[ simulationCentralBody ]->gravityFieldSettings = boost::make_shared<
                 FromFileSphericalHarmonicsGravityFieldSettings >( jgmro120d );
         bodySettings[ simulationCentralBody ]->atmosphereSettings = boost::make_shared< TabulatedAtmosphereSettings >(
                     tabulatedAtmosphereFiles, atmosphereIndependentVariables, atmosphereDependentVariables,
-                    interpolators::use_boundary_value );
+                    boundaryConditions, extrapolationValues );
         break;
     }
     case 2:
@@ -279,11 +302,14 @@ int main( )
     }
     case 3:
     case 4:
+    case 5:
     {
         bodySettings[ simulationCentralBody ]->gravityFieldSettings = boost::make_shared<
                 FromFileSphericalHarmonicsGravityFieldSettings >( ggm02s );
-        bodySettings[ simulationCentralBody ]->atmosphereSettings = boost::make_shared< TabulatedAtmosphereSettings >(
-                    getAtmosphereTablesPath( ) + "USSA1976Until100kmPer100mUntil1000kmPer1000m.dat" );
+        bodySettings[ simulationCentralBody ]->atmosphereSettings = boost::make_shared< ExponentialAtmosphereSettings >(
+                    7050, 240.0, 1.225, 2.87e2 );
+//        bodySettings[ simulationCentralBody ]->atmosphereSettings = boost::make_shared< TabulatedAtmosphereSettings >(
+//                    getAtmosphereTablesPath( ) + "USSA1976Until100kmPer100mUntil1000kmPer1000m.dat" );
         break;
     }
     }
@@ -351,6 +377,7 @@ int main( )
     case 1:
     case 3:
     case 4:
+    case 5:
     {
         bool keplerOrbit = false;
         if ( keplerOrbit )
@@ -372,6 +399,25 @@ int main( )
             accelerationsOfSatellite[ "Sun" ].push_back( boost::make_shared< AccelerationSettings >( cannon_ball_radiation_pressure ) );
 
             accelerationsOfSatellite[ simulationCentralBody ].push_back( boost::make_shared< AccelerationSettings >( aerodynamic ) );
+        }
+
+        // Add thrust acceleration if 5th case
+        if ( testCase == 5 )
+        {
+            // Define thrust settings
+            double thrustMagnitude = 9.81;
+            double specificImpulse = 5000.0;
+            boost::shared_ptr< ThrustDirectionGuidanceSettings > thrustDirectionGuidanceSettings =
+                    boost::make_shared< ThrustDirectionFromStateGuidanceSettings >(
+                        simulationCentralBody, true, false );
+            boost::shared_ptr< ThrustEngineSettings > thrustMagnitudeSettings =
+                    boost::make_shared< ConstantThrustEngineSettings >(
+                        thrustMagnitude, specificImpulse );
+
+            // Define thrust acceleration settings
+            accelerationsOfSatellite[ "Satellite" ].push_back(
+                        boost::make_shared< ThrustAccelerationSettings >( thrustDirectionGuidanceSettings,
+                                                                          thrustMagnitudeSettings) );
         }
         break;
     }

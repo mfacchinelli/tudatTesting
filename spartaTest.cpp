@@ -98,10 +98,10 @@ int main( )
     const int numberOfCores = 2;
     const std::string geometryFileUser = getSpartaDataPath( ) + "data/data.mro"; // check that it is not called data.shape
     const double referenceArea = 37.5;//3.12715;
-    const double referenceLength = 1.0;
+    const double referenceLength = 2.5;
     const int referenceAxis = + 0; // axis opposite to free stream velocity and where reference aerodynamic area is taken
     Eigen::Vector3d momentReferencePoint = Eigen::Vector3d::Zero( );
-    momentReferencePoint[ 1 ] = 1.25;
+    momentReferencePoint[ 2 ] = 1.3875;
     const std::string simulationGases = "CO2"; // check that it matches gases in SPARTA atmosphere
     const double wallTemperature = 300;
     const double accomodationCoefficient = 1.0;
@@ -113,12 +113,12 @@ int main( )
     // Create analysis object.
     std::vector< std::vector< double > > independentVariableDataPoints;
     independentVariableDataPoints.resize( 3 );
-    independentVariableDataPoints[ 0 ] = getDefaultRarefiedFlowAltitudePoints( "Mars" );
-    independentVariableDataPoints[ 1 ] = getDefaultRarefiedFlowMachPoints( "Full" );
-    independentVariableDataPoints[ 2 ] = getDefaultRarefiedFlowAngleOfAttackPoints( );
-//    independentVariableDataPoints[ 0 ] = { 100e3 };
-//    independentVariableDataPoints[ 1 ] = { 17.1 };
-//    independentVariableDataPoints[ 2 ] = { 0.0 * PI / 180.0 };
+//    independentVariableDataPoints[ 0 ] = getDefaultRarefiedFlowAltitudePoints( "Mars" );
+//    independentVariableDataPoints[ 1 ] = getDefaultRarefiedFlowMachPoints( "Full" );
+//    independentVariableDataPoints[ 2 ] = getDefaultRarefiedFlowAngleOfAttackPoints( );
+    independentVariableDataPoints[ 0 ] = { 100e3 };
+    independentVariableDataPoints[ 1 ] = { 18.36 };
+    independentVariableDataPoints[ 2 ] = { 0.0 * PI / 180.0 };
 
     // Generate database of aerodynamic coefficients.
     RarefiedFlowAnalysis coefficientInterface = RarefiedFlowAnalysis(
@@ -132,7 +132,7 @@ int main( )
                 referenceAxis,
                 momentReferencePoint,
                 0.25,
-                17.5,
+                20,
                 wallTemperature,
                 accomodationCoefficient,
                 false,

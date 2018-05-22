@@ -11,30 +11,30 @@
 #include <Tudat/SimulationSetup/tudatSimulationHeader.h>
 #include "Tudat/Astrodynamics/Aerodynamics/UnitTests/testApolloCapsuleCoefficients.h"
 
-////! Get path for output directory.
-//static inline std::string getOutputPath(
-//        const std::string& extraDirectory = "" )
-//{
-//    // Declare file path string assigned to filePath.
-//    // __FILE__ only gives the absolute path of the header file!
-//    std::string filePath_( __FILE__ );
+//! Get path for output directory.
+static inline std::string getOutputPath(
+        const std::string& extraDirectory = "" )
+{
+    // Declare file path string assigned to filePath.
+    // __FILE__ only gives the absolute path of the header file!
+    std::string filePath_( __FILE__ );
 
-//    // Strip filename from temporary string and return root-path string.
-//    std::string reducedPath = filePath_.substr( 0, filePath_.length( ) -
-//                                                std::string( "rotationTest.cpp" ).length( ) );
-//    std::string outputPath = reducedPath + "SimulationOutput/";
-//    if( extraDirectory != "" )
-//    {
-//        outputPath += extraDirectory;
-//    }
+    // Strip filename from temporary string and return root-path string.
+    std::string reducedPath = filePath_.substr( 0, filePath_.length( ) -
+                                                std::string( "rotationTest.cpp" ).length( ) );
+    std::string outputPath = reducedPath + "SimulationOutput/";
+    if( extraDirectory != "" )
+    {
+        outputPath += extraDirectory;
+    }
 
-//    if( outputPath.at( outputPath.size( ) - 1 ) != '/' )
-//    {
-//        outputPath += "/";
-//    }
+    if( outputPath.at( outputPath.size( ) - 1 ) != '/' )
+    {
+        outputPath += "/";
+    }
 
-//    return outputPath;
-//}
+    return outputPath;
+}
 
 //! Execute propagation of orbit of Asterix around Mars.
 int main( )
@@ -54,7 +54,7 @@ int main( )
     using namespace tudat::input_output;
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    ///////////////////////     CREATE ENVIRONMENT AND VEHICLE       //////////////////////////////////////////////////////
+    ///////////////////////         CREATE ENVIRONMENT            /////////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     // Load Spice kernels.
@@ -65,8 +65,8 @@ int main( )
     // Set simulation time settings.
     const double simulationStartEpoch = 7.0 * tudat::physical_constants::JULIAN_YEAR +
             30.0 * 6.0 * tudat::physical_constants::JULIAN_DAY;
-    const double simulationEndEpoch = 100.0 + simulationStartEpoch;
-//            1.0 * tudat::physical_constants::JULIAN_DAY + simulationStartEpoch;
+    const double simulationEndEpoch = //100.0 + simulationStartEpoch;
+            1.0 * tudat::physical_constants::JULIAN_DAY + simulationStartEpoch;
 
     // Define body settings for simulation.
     std::vector< std::string > bodiesToCreate;
@@ -79,6 +79,9 @@ int main( )
     for( unsigned int i = 0; i < bodiesToCreate.size( ); i++ )
     {
         bodySettings[ bodiesToCreate.at( i ) ]->ephemerisSettings->resetFrameOrientation( "J2000" );
+//        bodySettings[ bodiesToCreate.at( i ) ]->ephemerisSettings =
+//                boost::make_shared< simulation_setup::ConstantEphemerisSettings >(
+//                    Eigen::Vector6d::Zero( ), "SSB", "J2000" );
         bodySettings[ bodiesToCreate.at( i ) ]->rotationModelSettings->resetOriginalFrame( "J2000" );
     }
     bodySettings[ "Mars" ]->gravityFieldSettings = boost::make_shared< FromFileSphericalHarmonicsGravityFieldSettings >( jgmro120d );
@@ -126,6 +129,27 @@ int main( )
     // Finalize body creation.
     setGlobalFrameBodyEphemerides( bodyMap, "SSB", "J2000" );
 
+    // Set tabulated ephemerides for orbit and rotation
+//    std::map< double, Eigen::Matrix< double, 7, 1 > > dummyRotationMap;
+//    dummyRotationMap[ -1.0E100 ] = Eigen::Matrix< double, 7, 1 >::Zero( );
+//    dummyRotationMap[ 1.0E100 ] = Eigen::Matrix< double, 7, 1 >::Zero( );
+//    boost::shared_ptr< interpolators::OneDimensionalInterpolator< double, Eigen::Matrix< double, 7, 1 > > >
+//            dummyRotationInterpolator =
+//            boost::make_shared< interpolators::LinearInterpolator< double, Eigen::Matrix< double, 7, 1 > > >( dummyRotationMap );
+//    bodyMap[ "Satellite" ]->setRotationalEphemeris( boost::make_shared<
+//                                                    tudat::ephemerides::TabulatedRotationalEphemeris< double, double > >(
+//                                                        dummyRotationInterpolator, "J2000", "Satellite_Fixed" ) );
+
+//    std::map< double, Eigen::Matrix< double, 6, 1 > > dummyStateMap;
+//    dummyStateMap[ -1.0E100 ] = Eigen::Matrix< double, 6, 1 >::Zero( );
+//    dummyStateMap[ 1.0E100 ] = Eigen::Matrix< double, 6, 1 >::Zero( );
+//    boost::shared_ptr< interpolators::OneDimensionalInterpolator< double, Eigen::Matrix< double, 6, 1 > > >
+//            dummyStateInterpolator =
+//            boost::make_shared< interpolators::LinearInterpolator< double, Eigen::Matrix< double, 6, 1 > > >( dummyStateMap );
+//    bodyMap[ "Satellite" ]->setEphemeris( boost::make_shared<
+//                                          tudat::ephemerides::TabulatedCartesianEphemeris< double, double > >(
+//                                              dummyStateInterpolator, "SSB", "J2000" ) );
+
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ///////////////////////            CREATE ACCELERATIONS          //////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -153,7 +177,8 @@ int main( )
     SelectedTorqueMap torqueMap;
     torqueMap[ "Satellite" ][ "Mars" ].push_back(
                 boost::make_shared< TorqueSettings >( basic_astrodynamics::aerodynamic_torque ) );
-    basic_astrodynamics::TorqueModelMap torqueModelMap = createTorqueModelsMap( bodyMap, torqueMap );
+    basic_astrodynamics::TorqueModelMap torqueModelMap = createTorqueModelsMap( bodyMap, torqueMap );//,
+//                                                                                bodiesToPropagate );
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ///////////////////////             DEFINE INITIAL CONDITIONS              ////////////////////////////////////////////
@@ -174,7 +199,7 @@ int main( )
 
     // Define initial rotational state
     Eigen::Quaterniond initialRotation = Eigen::Quaterniond( Eigen::Matrix3d::Identity( ) );
-    Eigen::VectorXd rotationalInitialState = Eigen::VectorXd::Zero( 7 );
+    Eigen::Vector7d rotationalInitialState = Eigen::Vector7d::Zero( 7 );
     rotationalInitialState.segment( 0, 4 ) = linear_algebra::convertQuaternionToVectorFormat( initialRotation );
     rotationalInitialState( 4 ) = 1.0E-4;
 
@@ -190,7 +215,7 @@ int main( )
     boost::shared_ptr< RotationalStatePropagatorSettings< double > > rotationalPropagatorSettings =
             boost::make_shared< RotationalStatePropagatorSettings< double > >
             ( torqueModelMap, bodiesToPropagate, rotationalInitialState, terminationSettings,
-              quaternions );
+              exponential_map );
 
     // Create propagation settings for translational dynamics.
     boost::shared_ptr< TranslationalStatePropagatorSettings< double > > translationalPropagatorSettings =
@@ -233,38 +258,36 @@ int main( )
     // Compute map of Kepler elements
     Eigen::VectorXd currentFullState;
     Eigen::Vector6d currentCartesianState;
-    std::cout << "Propagated states: " << std::endl;
     for( std::map< double, Eigen::VectorXd >::const_iterator stateIterator = fullIntegrationResult.begin( );
          stateIterator != fullIntegrationResult.end( ); stateIterator++ )
     {
         // Get current states
         currentFullState = stateIterator->second;
         currentCartesianState = currentFullState.segment( 0, 6 );
-        std::cout << currentFullState.transpose( ) << std::endl;
 
         // Store translational and rotational states
         cartesianIntegrationResult[ stateIterator->first ] = currentCartesianState;
         rotationIntegrationResult[ stateIterator->first ] = currentFullState.segment( 6, 7 );
 
-        // Retrieve current Cartesian state (convert to Mars-centered frame if needed)
+        // Copute current Keplerian state
         keplerianIntegrationResult[ stateIterator->first ] =
                 convertCartesianToKeplerianElements( currentCartesianState, marsGravitationalParameter );
     }
 
-//    // Write perturbed satellite propagation history to file.
-//    writeDataMapToTextFile( cartesianIntegrationResult,
-//                            "cart.dat", getOutputPath( ),
-//                            "",
-//                            std::numeric_limits< double >::digits10,
-//                            std::numeric_limits< double >::digits10,
-//                            "," );
+    // Write perturbed satellite propagation history to file.
+    writeDataMapToTextFile( cartesianIntegrationResult,
+                            "translational.dat", getOutputPath( ),
+                            "",
+                            std::numeric_limits< double >::digits10,
+                            std::numeric_limits< double >::digits10,
+                            "," );
 
-//    writeDataMapToTextFile( keplerianIntegrationResult,
-//                            "orbit.dat", getOutputPath( ),
-//                            "",
-//                            std::numeric_limits< double >::digits10,
-//                            std::numeric_limits< double >::digits10,
-//                            "," );
+    writeDataMapToTextFile( rotationIntegrationResult,
+                            "rotational.dat", getOutputPath( ),
+                            "",
+                            std::numeric_limits< double >::digits10,
+                            std::numeric_limits< double >::digits10,
+                            "," );
 
     // Final statement.
     // The exit code EXIT_SUCCESS indicates that the program was successfully executed.
