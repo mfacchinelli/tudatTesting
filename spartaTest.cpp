@@ -94,7 +94,7 @@ int main( )
     /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     // Define inputs
-    const std::string SPARTAExecutable = "'/Users/Michele/AE Software/SPARTA/src/spa_mac_mpi'";
+    const std::string SPARTAExecutable = "/Users/Michele/Software/SPARTA/src/spa_mac_mpi";
     const int numberOfCores = 2;
     const std::string geometryFileUser = getSpartaDataPath( ) + "data/data.mro"; // check that it is not called data.shape
     const double referenceArea = 37.5;//3.12715;
@@ -121,8 +121,8 @@ int main( )
     independentVariableDataPoints[ 2 ] = { 0.0 * PI / 180.0 };
 
     // Generate database of aerodynamic coefficients.
-    RarefiedFlowAnalysis coefficientInterface = RarefiedFlowAnalysis(
-                SPARTAExecutable,
+    boost::shared_ptr< RarefiedFlowAnalysis > coefficientInterface =
+            boost::make_shared< RarefiedFlowAnalysis >(
                 independentVariableDataPoints,
                 boost::make_shared< TabulatedAtmosphere >( tabulatedAtmosphere ),
                 simulationGases,
@@ -132,22 +132,24 @@ int main( )
                 referenceAxis,
                 momentReferencePoint,
                 0.25,
-                20,
+                5.0,
                 wallTemperature,
                 accomodationCoefficient,
                 false,
+                SPARTAExecutable,
                 "/usr/local/bin/mpirun",
                 numberOfCores );
 
     // Write to files
     std::map< int, std::string > fileNamesMap;
-    fileNamesMap[ 0 ] = input_output::getSpartaDataPath( ) + "coefficients/Cd.dat";
-    fileNamesMap[ 1 ] = input_output::getSpartaDataPath( ) + "coefficients/Cs.dat";
-    fileNamesMap[ 2 ] = input_output::getSpartaDataPath( ) + "coefficients/Cl.dat";
-    fileNamesMap[ 3 ] = input_output::getSpartaDataPath( ) + "coefficients/Cm1.dat";
-    fileNamesMap[ 4 ] = input_output::getSpartaDataPath( ) + "coefficients/Cm.dat";
-    fileNamesMap[ 5 ] = input_output::getSpartaDataPath( ) + "coefficients/Cm3.dat";
-    coefficientInterface.saveAerodynamicCoefficientsTables( fileNamesMap );
+    std::string outputDirectory = getOutputPath( "coefficients" );
+    fileNamesMap[ 0 ] = "Cd.dat";
+    fileNamesMap[ 1 ] = "Cs.dat";
+    fileNamesMap[ 2 ] = "Cl.dat";
+    fileNamesMap[ 3 ] = "Cm1.dat";
+    fileNamesMap[ 4 ] = "Cm.dat";
+    fileNamesMap[ 5 ] = "Cm3.dat";
+    coefficientInterface->saveAerodynamicCoefficientsTables( fileNamesMap, outputDirectory );
 
     // Final statement.
     // The exit code EXIT_SUCCESS indicates that the program was successfully executed.

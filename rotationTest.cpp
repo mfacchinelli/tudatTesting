@@ -79,9 +79,6 @@ int main( )
     for( unsigned int i = 0; i < bodiesToCreate.size( ); i++ )
     {
         bodySettings[ bodiesToCreate.at( i ) ]->ephemerisSettings->resetFrameOrientation( "J2000" );
-//        bodySettings[ bodiesToCreate.at( i ) ]->ephemerisSettings =
-//                boost::make_shared< simulation_setup::ConstantEphemerisSettings >(
-//                    Eigen::Vector6d::Zero( ), "SSB", "J2000" );
         bodySettings[ bodiesToCreate.at( i ) ]->rotationModelSettings->resetOriginalFrame( "J2000" );
     }
     bodySettings[ "Mars" ]->gravityFieldSettings = boost::make_shared< FromFileSphericalHarmonicsGravityFieldSettings >( jgmro120d );
@@ -129,27 +126,6 @@ int main( )
     // Finalize body creation.
     setGlobalFrameBodyEphemerides( bodyMap, "SSB", "J2000" );
 
-    // Set tabulated ephemerides for orbit and rotation
-//    std::map< double, Eigen::Matrix< double, 7, 1 > > dummyRotationMap;
-//    dummyRotationMap[ -1.0E100 ] = Eigen::Matrix< double, 7, 1 >::Zero( );
-//    dummyRotationMap[ 1.0E100 ] = Eigen::Matrix< double, 7, 1 >::Zero( );
-//    boost::shared_ptr< interpolators::OneDimensionalInterpolator< double, Eigen::Matrix< double, 7, 1 > > >
-//            dummyRotationInterpolator =
-//            boost::make_shared< interpolators::LinearInterpolator< double, Eigen::Matrix< double, 7, 1 > > >( dummyRotationMap );
-//    bodyMap[ "Satellite" ]->setRotationalEphemeris( boost::make_shared<
-//                                                    tudat::ephemerides::TabulatedRotationalEphemeris< double, double > >(
-//                                                        dummyRotationInterpolator, "J2000", "Satellite_Fixed" ) );
-
-//    std::map< double, Eigen::Matrix< double, 6, 1 > > dummyStateMap;
-//    dummyStateMap[ -1.0E100 ] = Eigen::Matrix< double, 6, 1 >::Zero( );
-//    dummyStateMap[ 1.0E100 ] = Eigen::Matrix< double, 6, 1 >::Zero( );
-//    boost::shared_ptr< interpolators::OneDimensionalInterpolator< double, Eigen::Matrix< double, 6, 1 > > >
-//            dummyStateInterpolator =
-//            boost::make_shared< interpolators::LinearInterpolator< double, Eigen::Matrix< double, 6, 1 > > >( dummyStateMap );
-//    bodyMap[ "Satellite" ]->setEphemeris( boost::make_shared<
-//                                          tudat::ephemerides::TabulatedCartesianEphemeris< double, double > >(
-//                                              dummyStateInterpolator, "SSB", "J2000" ) );
-
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ///////////////////////            CREATE ACCELERATIONS          //////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -177,8 +153,7 @@ int main( )
     SelectedTorqueMap torqueMap;
     torqueMap[ "Satellite" ][ "Mars" ].push_back(
                 boost::make_shared< TorqueSettings >( basic_astrodynamics::aerodynamic_torque ) );
-    basic_astrodynamics::TorqueModelMap torqueModelMap = createTorqueModelsMap( bodyMap, torqueMap );//,
-//                                                                                bodiesToPropagate );
+    basic_astrodynamics::TorqueModelMap torqueModelMap = createTorqueModelsMap( bodyMap, torqueMap );
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ///////////////////////             DEFINE INITIAL CONDITIONS              ////////////////////////////////////////////
@@ -232,12 +207,10 @@ int main( )
             boost::make_shared< MultiTypePropagatorSettings< double > >( propagatorSettingsList, terminationSettings );
 
     // Integrator settings
-//    boost::shared_ptr< IntegratorSettings< > > integratorSettings =
-//            boost::make_shared< RungeKuttaVariableStepSizeSettings< > >(
-//                rungeKuttaVariableStepSize, simulationStartEpoch, 1.0,
-//                RungeKuttaCoefficients::rungeKuttaFehlberg56, 1e-3, 1e1, 1e-15, 1e-15 );
-    boost::shared_ptr< IntegratorSettings< > > integratorSettings = boost::make_shared< IntegratorSettings< > > (
-                rungeKutta4, simulationStartEpoch, 1.0 );
+    boost::shared_ptr< IntegratorSettings< > > integratorSettings =
+            boost::make_shared< RungeKuttaVariableStepSizeSettings< > >(
+                rungeKuttaVariableStepSize, simulationStartEpoch, 100.0,
+                RungeKuttaCoefficients::rungeKuttaFehlberg56, 1e-1, 1e3, 1e-12, 1e-12 );
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ///////////////////////             PROPAGATE ORBIT            ////////////////////////////////////////////////////////
@@ -248,8 +221,8 @@ int main( )
                 bodyMap, integratorSettings, propagatorSettings, true, false, false );
     std::map< double, Eigen::VectorXd > fullIntegrationResult = dynamicsSimulator.getEquationsOfMotionNumericalSolution( );
     std::map< double, Eigen::VectorXd > cartesianIntegrationResult;
-    std::map< double, Eigen::VectorXd > rotationIntegrationResult;
     std::map< double, Eigen::VectorXd > keplerianIntegrationResult;
+    std::map< double, Eigen::VectorXd > rotationIntegrationResult;
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ///////////////////////        PROVIDE OUTPUT TO CONSOLE AND FILES           //////////////////////////////////////////
@@ -274,6 +247,11 @@ int main( )
                 convertCartesianToKeplerianElements( currentCartesianState, marsGravitationalParameter );
     }
 
+    // Convert history
+    std::map< double, Eigen::VectorXd > rotationIntegrationResultCopy = rotationIntegrationResult;
+    convertQuaternionHistoryToMatchSigns( rotationIntegrationResultCopy,
+                                          propagators::rotational_state );
+
     // Write perturbed satellite propagation history to file.
     writeDataMapToTextFile( cartesianIntegrationResult,
                             "translational.dat", getOutputPath( ),
@@ -284,6 +262,13 @@ int main( )
 
     writeDataMapToTextFile( rotationIntegrationResult,
                             "rotational.dat", getOutputPath( ),
+                            "",
+                            std::numeric_limits< double >::digits10,
+                            std::numeric_limits< double >::digits10,
+                            "," );
+
+    writeDataMapToTextFile( rotationIntegrationResultCopy,
+                            "rotationalCopy.dat", getOutputPath( ),
                             "",
                             std::numeric_limits< double >::digits10,
                             std::numeric_limits< double >::digits10,
