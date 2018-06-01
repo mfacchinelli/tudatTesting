@@ -1,4 +1,4 @@
-/*    Copyright (c) 2010-2017, Delft University of Technology
+/*    Copyright (c) 2010-2018, Delft University of Technology
  *    All rigths reserved
  *
  *    This file is part of the Tudat. Redistribution and use in source and
@@ -6,6 +6,10 @@
  *    under the terms of the Modified BSD license. You should have received
  *    a copy of the license with this file. If not, please or visit:
  *    http://tudat.tudelft.nl/LICENSE.
+ *
+ *    References:
+ *      Mooij, E. "Orbit-State Model Selection for Solar-Sailing Mission Optimization."
+ *          AIAA/AAS Astrodynamics Specialist Conference. 2012.
  */
 
 #include <ctime>
@@ -36,9 +40,56 @@ static inline std::string getOutputPath(
     return outputPath;
 }
 
-Eigen::Vector3d returnConstantThrustDirection( const double independentVariable )
+//! Function to compute the next step size [Mooij, E.]
+template< typename IndependentVariableType = double, typename StateType, typename StateDerivativeType, typename TimeStepType = double >
+std::pair< TimeStepType, bool > computeNewStepSize(
+        const TimeStepType stepSize,
+        const TimeStepType lowerOrder,
+        const TimeStepType higherOrder,
+        const TimeStepType safetyFactorForNextStepSize,
+        const TimeStepType maximumFactorIncreaseForNextStepSize,
+        const TimeStepType minimumFactorDecreaseForNextStepSize,
+        const typename StateType::Scalar relativeErrorTolerance,
+        const StateType& absoluteErrorTolerance,
+        const StateType& lowerOrderEstimate,
+        const StateType& higherOrderEstimate )
 {
-    return Eigen::Vector3d::UnitX( );
+    TUDAT_UNUSED_PARAMETER( lowerOrder );
+
+    // Compute local truncation error
+    const StateType localTruncationError = lowerOrderEstimate - higherOrderEstimate;
+
+    // Compute norm of error
+    const typename StateType::Scalar = currentErrorTolerance;
+    double localTruncationErrorNorm = 0;
+    for ( unsigned int i = 0; i < lowerOrderEstimate.rows( ); i++ )
+    {
+        currentErrorTolerance = absoluteErrorTolerance[ i ] / relativeErrorTolerance;
+        localTruncationErrorNorm += std::pow( localTruncationError[ i ] / (
+                                                 std::max( higherOrderEstimate[ i ], currentErrorTolerance ) ), 2 );
+    }
+    localTruncationErrorNorm = std::sqrt( localTruncationErrorNorm );
+
+    // Compute new step size
+    TimeStepType newStepSize;
+    const TimeStepType referenceValue = safetyFactorForNextStepSize * std::pow( relativeErrorTolerance /
+                                                                                localTruncationErrorNorm, 1.0 / higherOrder );
+    if ( localTruncationErrorNorm > relativeErrorTolerance )
+    {
+        newStepSize = std::max( minimumFactorDecreaseForNextStepSize, referenceValue ) * stepSize;
+    }
+    else
+    {
+        if ( referenceValue < maximumFactorIncreaseForNextStepSize )
+        {
+            newStepSize = referenceValue * stepSize;
+        }
+        else
+        {
+            newStepSize = maximumFactorIncreaseForNextStepSize * stepSize;
+        }
+    }
+    return newStepSize;
 }
 
 //! Execute propagation of orbit of Satellite around the Earth.
@@ -85,7 +136,7 @@ int main( )
     //      3: Circular orbit at LEO (Low Earth Orbit)
     //      4: Molniya orbit
     //      5: Low-thrust trajectory
-    int testCase = 1;
+    unsigned int testCase = 1;
     std::vector< std::string > pathAdditionTestCase = { "aero", "aero_full", "inter", "circ", "moln", "low_thrust" };
     switch ( testCase )
     {
@@ -100,7 +151,7 @@ int main( )
         limitingSphericalHarminics = 21;
 
         // Initial conditions
-        SatelliteInitialStateInKeplerianElements( semiMajorAxisIndex ) = -17305000.000000;
+        SatelliteInitialStateInKeplerianElements( semiMajorAxisIndex ) = -17305.0e3;
         SatelliteInitialStateInKeplerianElements( eccentricityIndex ) = 1.2;
         SatelliteInitialStateInKeplerianElements( inclinationIndex ) = convertDegreesToRadians( 93.0 );
         SatelliteInitialStateInKeplerianElements( longitudeOfAscendingNodeIndex ) = convertDegreesToRadians( 158.7 );
@@ -119,7 +170,7 @@ int main( )
         limitingSphericalHarminics = 21;
 
         // Initial conditions
-        SatelliteInitialStateInKeplerianElements( semiMajorAxisIndex ) = 27228500;
+        SatelliteInitialStateInKeplerianElements( semiMajorAxisIndex ) = 27228500.0;
         SatelliteInitialStateInKeplerianElements( eccentricityIndex ) = 0.869218;
         SatelliteInitialStateInKeplerianElements( inclinationIndex ) = convertDegreesToRadians( 93.0 );
         SatelliteInitialStateInKeplerianElements( longitudeOfAscendingNodeIndex ) = convertDegreesToRadians( 158.7 );
@@ -141,7 +192,7 @@ int main( )
         referenceTolerance = -10;
 
         // Initial conditions
-        SatelliteInitialStateInKeplerianElements( semiMajorAxisIndex ) = 845508000;
+        SatelliteInitialStateInKeplerianElements( semiMajorAxisIndex ) = 845508.0e3;
         SatelliteInitialStateInKeplerianElements( eccentricityIndex ) = 0.059136;
         SatelliteInitialStateInKeplerianElements( inclinationIndex ) = convertDegreesToRadians( 2.5 );
         SatelliteInitialStateInKeplerianElements( longitudeOfAscendingNodeIndex ) = convertDegreesToRadians( 328.6 );
@@ -213,7 +264,7 @@ int main( )
     }
 
     // Give error is folder is not defined
-    if ( static_cast< size_t >( testCase ) > pathAdditionTestCase.size( ) )
+    if ( testCase > pathAdditionTestCase.size( ) )
     {
         throw std::runtime_error( "Output folder is undefined for this test case." );
     }
@@ -427,10 +478,9 @@ int main( )
             // Define thrust settings
             double thrustMagnitude = 9.81;
             double specificImpulse = 5000.0;
-//            boost::function< Eigen::Vector3d( const double ) > thrustFunction = &returnConstantThrustDirection;
 //            boost::shared_ptr< ThrustDirectionGuidanceSettings > thrustDirectionGuidanceSettings =
 //                    boost::make_shared< CustomThrustDirectionSettings >(
-//                        thrustFunction );
+//                        boost::lambda::constant( Eigen::Vector3d::UnitX( ) ) );
             boost::shared_ptr< ThrustDirectionGuidanceSettings > thrustDirectionGuidanceSettings =
                     boost::make_shared< ThrustDirectionFromStateGuidanceSettings >(
                         simulationCentralBody, true, false );
