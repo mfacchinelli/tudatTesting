@@ -60,20 +60,21 @@ std::pair< TimeStepType, bool > computeNewStepSize(
     const StateType localTruncationError = lowerOrderEstimate - higherOrderEstimate;
 
     // Compute norm of error
-    const typename StateType::Scalar = currentErrorTolerance;
+    const typename StateType::Scalar currentErrorTolerance;
     double localTruncationErrorNorm = 0;
     for ( unsigned int i = 0; i < lowerOrderEstimate.rows( ); i++ )
     {
         currentErrorTolerance = absoluteErrorTolerance[ i ] / relativeErrorTolerance;
         localTruncationErrorNorm += std::pow( localTruncationError[ i ] / (
                                                  std::max( higherOrderEstimate[ i ], currentErrorTolerance ) ), 2 );
+        // incorrect, also need value from next time step
     }
     localTruncationErrorNorm = std::sqrt( localTruncationErrorNorm );
 
     // Compute new step size
     TimeStepType newStepSize;
-    const TimeStepType referenceValue = safetyFactorForNextStepSize * std::pow( relativeErrorTolerance /
-                                                                                localTruncationErrorNorm, 1.0 / higherOrder );
+    const TimeStepType referenceValue = safetyFactorForNextStepSize * std::pow( relativeErrorTolerance / localTruncationErrorNorm,
+                                                                                1.0 / higherOrder );
     if ( localTruncationErrorNorm > relativeErrorTolerance )
     {
         newStepSize = std::max( minimumFactorDecreaseForNextStepSize, referenceValue ) * stepSize;
@@ -136,7 +137,7 @@ int main( )
     //      3: Circular orbit at LEO (Low Earth Orbit)
     //      4: Molniya orbit
     //      5: Low-thrust trajectory
-    unsigned int testCase = 1;
+    unsigned int testCase = 5;
     std::vector< std::string > pathAdditionTestCase = { "aero", "aero_full", "inter", "circ", "moln", "low_thrust" };
     switch ( testCase )
     {
