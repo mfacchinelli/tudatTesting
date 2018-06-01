@@ -11,7 +11,7 @@
 cmake_minimum_required(VERSION 2.6)
 
 # Specify project name.
-project(TemplateApplication)
+project(TudatTesting)
 
 # Load UserSettings.txt
 if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_CURRENT_SOURCE_DIR})
@@ -207,18 +207,24 @@ if(USE_NRLMSISE00)
   list(APPEND TUDAT_APPLICATION_EXTERNAL_LIBRARIES nrlmsise00)
 endif()
 
+#if(USE_SPARTA)
+#    list(APPEND TUDAT_APPLICATION_EXTERNAL_LIBRARIES tudat_sparta_interface)
+#endif()
+
+
 list(APPEND TUDAT_APPLICATION_PROPAGATION_LIBRARIES tudat_simulation_setup tudat_ground_stations tudat_propagators
     tudat_aerodynamics tudat_system_models tudat_geometric_shapes tudat_relativity tudat_gravitation tudat_mission_segments
-    tudat_electro_magnetism tudat_propulsion tudat_ephemerides ${TUDAT_APPLICATION_ITRS_LIBRARIES} tudat_numerical_integrators tudat_reference_frames
-    tudat_statistics tudat_propagators ${TUDAT_APPLICATION_EXTERNAL_INTERFACE_LIBRARIES} tudat_basic_astrodynamics
-    tudat_basic_mathematics tudat_root_finders tudat_input_output tudat_basics ${TUDAT_APPLICATION_EXTERNAL_LIBRARIES})
+    tudat_electro_magnetism tudat_propulsion tudat_ephemerides ${TUDAT_ITRS_LIBRARIES} tudat_numerical_integrators tudat_reference_frames
+    tudat_statistics tudat_propagators ${TUDAT_EXTERNAL_INTERFACE_LIBRARIES} tudat_basic_astrodynamics tudat_root_finders tudat_filters
+    tudat_basic_mathematics tudat_input_output tudat_basics ${TUDAT_EXTERNAL_LIBRARIES})
 
 list(APPEND TUDAT_APPLICATION_ESTIMATION_LIBRARIES tudat_simulation_setup tudat_observation_models tudat_ground_stations tudat_acceleration_partials
-    tudat_observation_partials tudat_estimatable_parameters tudat_orbit_determination  tudat_propagators
+    tudat_observation_partials tudat_estimatable_parameters tudat_orbit_determination tudat_propagators
     tudat_aerodynamics tudat_system_models tudat_geometric_shapes tudat_relativity tudat_gravitation tudat_mission_segments
-    tudat_electro_magnetism tudat_propulsion tudat_ephemerides ${TUDAT_APPLICATION_ITRS_LIBRARIES} tudat_numerical_integrators tudat_reference_frames
-    tudat_statistics tudat_propagators ${TUDAT_APPLICATION_EXTERNAL_INTERFACE_LIBRARIES} tudat_basic_astrodynamics
-    tudat_basic_mathematics tudat_input_output tudat_basics ${TUDAT_APPLICATION_EXTERNAL_LIBRARIES})
+    tudat_electro_magnetism tudat_propulsion tudat_ephemerides ${TUDAT_ITRS_LIBRARIES} tudat_numerical_integrators tudat_reference_frames
+    tudat_statistics tudat_propagators ${TUDAT_EXTERNAL_INTERFACE_LIBRARIES} tudat_basic_astrodynamics tudat_root_finders tudat_filters
+    tudat_basic_mathematics tudat_input_output tudat_basics ${TUDAT_EXTERNAL_LIBRARIES})
+
 
 # Add aerobraking test
 add_executable(application_aerobrakingTest "${SRCROOT}/aerobrakingTest.cpp")
@@ -247,10 +253,10 @@ target_link_libraries(application_atmosphereTest tudat_aerodynamics tudat_input_
     tudat_basic_mathematics tudat_basic_astrodynamics ${Boost_LIBRARIES} )
 
 # Add SPARTA test
-add_executable(application_spartaTest "${SRCROOT}/spartaTest.cpp")
-setup_executable_target(application_spartaTest "${SRCROOT}")
-target_link_libraries(application_spartaTest tudat_aerodynamics tudat_input_output tudat_basic_mathematics
-    tudat_basic_astrodynamics ${Boost_LIBRARIES} )
+#add_executable(application_spartaTest "${SRCROOT}/spartaTest.cpp")
+#setup_executable_target(application_spartaTest "${SRCROOT}")
+#target_link_libraries(application_spartaTest tudat_aerodynamics tudat_input_output tudat_basic_mathematics
+#    tudat_basic_astrodynamics tudat_sparta_interface ${Boost_LIBRARIES} )
 
 # Add rotational motion test
 add_executable(application_rotationTest "${SRCROOT}/rotationTest.cpp")

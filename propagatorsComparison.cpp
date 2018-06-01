@@ -36,6 +36,11 @@ static inline std::string getOutputPath(
     return outputPath;
 }
 
+Eigen::Vector3d returnConstantThrustDirection( const double independentVariable )
+{
+    return Eigen::Vector3d::UnitX( );
+}
+
 //! Execute propagation of orbit of Satellite around the Earth.
 int main( )
 {
@@ -79,8 +84,9 @@ int main( )
     //      2: Interplanetary trajectory
     //      3: Circular orbit at LEO (Low Earth Orbit)
     //      4: Molniya orbit
-    int testCase = 5;
-    std::vector< std::string > pathAdditionTestCase = { "aero", "aero_full", "inter", "circ", "moln" };
+    //      5: Low-thrust trajectory
+    int testCase = 1;
+    std::vector< std::string > pathAdditionTestCase = { "aero", "aero_full", "inter", "circ", "moln", "low_thrust" };
     switch ( testCase )
     {
     case 0: // Aerocapture
@@ -105,7 +111,7 @@ int main( )
     case 1: // Full aerobraking
     {
         // Set simulation time settings.
-        simulationDuration = 100.0 * physical_constants::JULIAN_DAY;
+        simulationDuration = 145.0 * physical_constants::JULIAN_DAY;
         constantTimeStep = { 20.0, 30.0, 40.0, 50.0, 75.0, 100.0, 150.0, 200.0, 250.0, 300.0 };
 
         // Set simulation central body
@@ -113,12 +119,12 @@ int main( )
         limitingSphericalHarminics = 21;
 
         // Initial conditions
-        SatelliteInitialStateInKeplerianElements( semiMajorAxisIndex ) = 27221000;
-        SatelliteInitialStateInKeplerianElements( eccentricityIndex ) = 0.869733;
-        SatelliteInitialStateInKeplerianElements( inclinationIndex ) = 0.0;//convertDegreesToRadians( 93.0 );
-        SatelliteInitialStateInKeplerianElements( longitudeOfAscendingNodeIndex ) = 0.0;//convertDegreesToRadians( 158.7 );
-        SatelliteInitialStateInKeplerianElements( argumentOfPeriapsisIndex ) = 0.0;//convertDegreesToRadians( 23.4 );
-        SatelliteInitialStateInKeplerianElements( trueAnomalyIndex ) = 0.0;//convertDegreesToRadians( 180.0 );
+        SatelliteInitialStateInKeplerianElements( semiMajorAxisIndex ) = 27228500;
+        SatelliteInitialStateInKeplerianElements( eccentricityIndex ) = 0.869218;
+        SatelliteInitialStateInKeplerianElements( inclinationIndex ) = convertDegreesToRadians( 93.0 );
+        SatelliteInitialStateInKeplerianElements( longitudeOfAscendingNodeIndex ) = convertDegreesToRadians( 158.7 );
+        SatelliteInitialStateInKeplerianElements( argumentOfPeriapsisIndex ) = convertDegreesToRadians( 23.4 );
+        SatelliteInitialStateInKeplerianElements( trueAnomalyIndex ) = convertDegreesToRadians( 180.0 );
         break;
     }
     case 2: // Interplanetary trajectory
@@ -132,7 +138,7 @@ int main( )
 
         // Use less stringent tolerances
         tolerances = { -11, -10, -9, -8, -7, -6, -5 };
-        referenceTolerance = -13;
+        referenceTolerance = -10;
 
         // Initial conditions
         SatelliteInitialStateInKeplerianElements( semiMajorAxisIndex ) = 845508000;
@@ -154,7 +160,7 @@ int main( )
         limitingSphericalHarminics = 2;
 
         // Initial conditions
-        SatelliteInitialStateInKeplerianElements( semiMajorAxisIndex ) = 6936000.0;
+        SatelliteInitialStateInKeplerianElements( semiMajorAxisIndex ) = 6936.0e3;
         SatelliteInitialStateInKeplerianElements( eccentricityIndex ) = 0.0;
         SatelliteInitialStateInKeplerianElements( inclinationIndex ) = convertDegreesToRadians( 28.5 );
         SatelliteInitialStateInKeplerianElements( longitudeOfAscendingNodeIndex ) = convertDegreesToRadians( 194.8 );
@@ -173,7 +179,7 @@ int main( )
         limitingSphericalHarminics = 2;
 
         // Initial conditions
-        SatelliteInitialStateInKeplerianElements( semiMajorAxisIndex ) = 26559000.0;
+        SatelliteInitialStateInKeplerianElements( semiMajorAxisIndex ) = 26559.0e3;
         SatelliteInitialStateInKeplerianElements( eccentricityIndex ) = 0.70;
         SatelliteInitialStateInKeplerianElements( inclinationIndex ) = convertDegreesToRadians( 63.2 );
         SatelliteInitialStateInKeplerianElements( longitudeOfAscendingNodeIndex ) = convertDegreesToRadians( 206.3 );
@@ -202,8 +208,14 @@ int main( )
     }
     default:
     {
-        std::cerr << "Mode not recognized." << std::endl;
+        throw std::runtime_error( "Mode not recognized." );
     }
+    }
+
+    // Give error is folder is not defined
+    if ( static_cast< size_t >( testCase ) > pathAdditionTestCase.size( ) )
+    {
+        throw std::runtime_error( "Output folder is undefined for this test case." );
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -211,9 +223,7 @@ int main( )
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     // Load Spice kernels.
-    spice_interface::loadSpiceKernelInTudat( getSpiceKernelPath( ) + "pck00009.tpc" );
-    spice_interface::loadSpiceKernelInTudat( getSpiceKernelPath( ) + "de-403-masses.tpc" );
-    spice_interface::loadSpiceKernelInTudat( getSpiceKernelPath( ) + "de421.bsp" );
+    spice_interface::loadStandardSpiceKernels( );
 
     // Set simulation time settings.
     const double simulationStartEpoch = 7.0 * physical_constants::JULIAN_YEAR +
@@ -227,8 +237,8 @@ int main( )
     case 0:
     case 1:
     {
-        bodiesToCreate.push_back( "Sun" );
         bodiesToCreate.push_back( simulationCentralBody );
+        bodiesToCreate.push_back( "Sun" );
         bodiesToCreate.push_back( "Earth" );
         break;
     }
@@ -248,8 +258,8 @@ int main( )
     case 4:
     case 5:
     {
-        bodiesToCreate.push_back( "Sun" );
         bodiesToCreate.push_back( simulationCentralBody );
+        bodiesToCreate.push_back( "Sun" );
         bodiesToCreate.push_back( "Moon" );
         break;
     }
@@ -298,6 +308,8 @@ int main( )
     }
     case 2:
     {
+        bodySettings[ simulationCentralBody ]->gravityFieldSettings = boost::make_shared<
+                CentralGravityFieldSettings >( 1.32712440019e20 );
         break;
     }
     case 3:
@@ -308,8 +320,6 @@ int main( )
                 FromFileSphericalHarmonicsGravityFieldSettings >( ggm02s );
         bodySettings[ simulationCentralBody ]->atmosphereSettings = boost::make_shared< ExponentialAtmosphereSettings >(
                     7050, 240.0, 1.225, 2.87e2 );
-//        bodySettings[ simulationCentralBody ]->atmosphereSettings = boost::make_shared< TabulatedAtmosphereSettings >(
-//                    getAtmosphereTablesPath( ) + "USSA1976Until100kmPer100mUntil1000kmPer1000m.dat" );
         break;
     }
     }
@@ -321,24 +331,35 @@ int main( )
 
     // Create spacecraft object.
     bodyMap[ "Satellite" ] = boost::make_shared< simulation_setup::Body >( );
-    bodyMap[ "Satellite" ]->setConstantBodyMass( 1000.0 );
+    const double vehicleMass = 1000.0;
+    bodyMap[ "Satellite" ]->setConstantBodyMass( vehicleMass );
 
     // Aerodynamic parameters
+    const bool readAerodynamicCoefficientsFromFile = true;
     const double referenceAreaAerodynamic = 37.5;
+    boost::shared_ptr< AerodynamicCoefficientSettings > aerodynamicCoefficientSettings;
+    if ( readAerodynamicCoefficientsFromFile )
+    {
+        // Aerodynamic coefficients from file
+        std::map< int, std::string > aerodynamicCoefficientFiles;
+        aerodynamicCoefficientFiles[ 0 ] = "/Users/Michele/Library/Mobile Documents/com~apple~CloudDocs/"
+                                           "University/Master Thesis/Code/MATLAB/data/MRODragCoefficients.txt";
+        aerodynamicCoefficientFiles[ 2 ] = "/Users/Michele/Library/Mobile Documents/com~apple~CloudDocs/"
+                                           "University/Master Thesis/Code/MATLAB/data/MROLiftCoefficients.txt";
 
-    // Aerodynamic coefficients from file
-    std::map< int, std::string > aerodynamicCoefficientFiles;
-    aerodynamicCoefficientFiles[ 0 ] = "/Users/Michele/Library/Mobile Documents/com~apple~CloudDocs/"
-                                       "University/Master Thesis/Code/MATLAB/data/MRODragCoefficients.txt";
-    aerodynamicCoefficientFiles[ 2 ] = "/Users/Michele/Library/Mobile Documents/com~apple~CloudDocs/"
-                                       "University/Master Thesis/Code/MATLAB/data/MROLiftCoefficients.txt";
-
-    // Create aerodynamic coefficient interface settings.
-    boost::shared_ptr< AerodynamicCoefficientSettings > aerodynamicCoefficientSettings =
-            simulation_setup::readTabulatedAerodynamicCoefficientsFromFiles(
-                aerodynamicCoefficientFiles, referenceAreaAerodynamic,
-                boost::assign::list_of( aerodynamics::angle_of_attack_dependent )( aerodynamics::altitude_dependent ),
-                true, true );
+        // Create aerodynamic coefficient interface settings.
+        aerodynamicCoefficientSettings = simulation_setup::readTabulatedAerodynamicCoefficientsFromFiles(
+                    aerodynamicCoefficientFiles, referenceAreaAerodynamic,
+                    boost::assign::list_of( aerodynamics::angle_of_attack_dependent )( aerodynamics::altitude_dependent ),
+                    true, true );
+    }
+    else
+    {
+        // Set constant aerodynamic drag coefficient
+        const Eigen::Vector3d aerodynamicCoefficients = 2.2 * Eigen::Vector3d::UnitX( );
+        aerodynamicCoefficientSettings = boost::make_shared< ConstantAerodynamicCoefficientSettings >(
+                    referenceAreaAerodynamic, aerodynamicCoefficients, true, true );
+    }
 
     bodyMap[ "Satellite" ]->setAerodynamicCoefficientInterface(
                 createAerodynamicCoefficientInterface( aerodynamicCoefficientSettings, "Satellite" ) );
@@ -397,7 +418,6 @@ int main( )
                 }
             }
             accelerationsOfSatellite[ "Sun" ].push_back( boost::make_shared< AccelerationSettings >( cannon_ball_radiation_pressure ) );
-
             accelerationsOfSatellite[ simulationCentralBody ].push_back( boost::make_shared< AccelerationSettings >( aerodynamic ) );
         }
 
@@ -407,6 +427,10 @@ int main( )
             // Define thrust settings
             double thrustMagnitude = 9.81;
             double specificImpulse = 5000.0;
+//            boost::function< Eigen::Vector3d( const double ) > thrustFunction = &returnConstantThrustDirection;
+//            boost::shared_ptr< ThrustDirectionGuidanceSettings > thrustDirectionGuidanceSettings =
+//                    boost::make_shared< CustomThrustDirectionSettings >(
+//                        thrustFunction );
             boost::shared_ptr< ThrustDirectionGuidanceSettings > thrustDirectionGuidanceSettings =
                     boost::make_shared< ThrustDirectionFromStateGuidanceSettings >(
                         simulationCentralBody, true, false );
@@ -483,13 +507,15 @@ int main( )
                     ///////////////////////     CREATE PROPAGATION SETTINGS         ////////////////////////////////////////////
 
                     // Propagator and integrator settings
-                    boost::shared_ptr< TranslationalStatePropagatorSettings< double > > propagatorSettings;
+                    boost::shared_ptr< TranslationalStatePropagatorSettings< double > > translationalPropagatorSettings;
                     boost::shared_ptr< IntegratorSettings< > > integratorSettings;
+                    boost::shared_ptr< PropagationTimeTerminationSettings > terminationSettings =
+                            boost::make_shared< PropagationTimeTerminationSettings >( simulationEndEpoch );
                     if ( propagatorType == 7 )
                     {
                         // Propagator
-                        propagatorSettings = boost::make_shared< TranslationalStatePropagatorSettings< double > >
-                                ( centralBodies, accelerationModelMap, bodiesToPropagate, SatelliteInitialState, simulationEndEpoch,
+                        translationalPropagatorSettings = boost::make_shared< TranslationalStatePropagatorSettings< double > >
+                                ( centralBodies, accelerationModelMap, bodiesToPropagate, SatelliteInitialState, terminationSettings,
                                   cowell );
 
                         // Integrator
@@ -501,7 +527,7 @@ int main( )
                     else
                     {
                         // Propagator
-                        propagatorSettings = boost::make_shared< TranslationalStatePropagatorSettings< double > >
+                        translationalPropagatorSettings = boost::make_shared< TranslationalStatePropagatorSettings< double > >
                                 ( centralBodies, accelerationModelMap, bodiesToPropagate, SatelliteInitialState, simulationEndEpoch,
                                   static_cast< TranslationalPropagatorType >( propagatorType ) );
 
@@ -516,10 +542,39 @@ int main( )
                         }
                         else if ( integratorType == 1 )
                         {
-                            integratorSettings = boost::make_shared< IntegratorSettings< > > (
+                            integratorSettings = boost::make_shared< IntegratorSettings< > >(
                                         rungeKutta4, simulationStartEpoch, constantTimeStep.at( value ) );
                         }
                     }
+
+                    // Add mass to propagator settings if 5th case
+                    std::vector< boost::shared_ptr< SingleArcPropagatorSettings< double > > > propagatorSettingsVector;
+                    propagatorSettingsVector.push_back( translationalPropagatorSettings );
+                    if ( testCase == 5 )
+                    {
+                        // Create mass rate models
+                        boost::shared_ptr< MassRateModelSettings > massRateModelSettings =
+                                boost::make_shared< FromThrustMassModelSettings >( true );
+                        std::map< std::string, boost::shared_ptr< basic_astrodynamics::MassRateModel > > massRateModels;
+                        massRateModels[ "Satellite" ] = createMassRateModel(
+                                    "Satellite", massRateModelSettings, bodyMap, accelerationModelMap );
+
+                        // Create settings for propagating the mass of the vehicle.
+                        std::vector< std::string > bodiesWithMassToPropagate;
+                        bodiesWithMassToPropagate.push_back( "Satellite" );
+
+                        Eigen::VectorXd initialBodyMasses = Eigen::VectorXd( 1 );
+                        initialBodyMasses( 0 ) = vehicleMass;
+
+                        boost::shared_ptr< SingleArcPropagatorSettings< double > > massPropagatorSettings =
+                                boost::make_shared< MassPropagatorSettings< double > >(
+                                    bodiesWithMassToPropagate, massRateModels, initialBodyMasses, terminationSettings );
+
+                        propagatorSettingsVector.push_back( massPropagatorSettings );
+                    }
+                    boost::shared_ptr< PropagatorSettings< double > > propagatorSettings =
+                            boost::make_shared< MultiTypePropagatorSettings< double > >(
+                                propagatorSettingsVector, terminationSettings );
 
                     ///////////////////////     PROPAGATE ORBIT                     ////////////////////////////////////////////
 
@@ -529,7 +584,7 @@ int main( )
 
                     // Create simulation object and propagate dynamics.
                     SingleArcDynamicsSimulator< > dynamicsSimulator(
-                                bodyMap, integratorSettings, propagatorSettings, true, false, false );
+                                bodyMap, integratorSettings, propagatorSettings, true, false, false, true );
                     std::map< double, Eigen::VectorXd > cartesianIntegrationResult = dynamicsSimulator.getEquationsOfMotionNumericalSolution( );
                     std::map< double, Eigen::VectorXd > usmIntegrationResult;
                     if ( propagatorType > 3 && propagatorType < 7 )

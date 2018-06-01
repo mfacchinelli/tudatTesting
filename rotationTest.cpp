@@ -142,9 +142,9 @@ int main( )
     accelerationsOfSatellite[ "Mars" ].push_back( boost::make_shared< SphericalHarmonicAccelerationSettings >( 21, 21 ) );
     accelerationsOfSatellite[ "Mars" ].push_back( boost::make_shared< AccelerationSettings >( basic_astrodynamics::aerodynamic ) );
     accelerationsOfSatellite[ "Sun" ].push_back( boost::make_shared< AccelerationSettings >(
-                                                   basic_astrodynamics::cannon_ball_radiation_pressure ) );
+                                                     basic_astrodynamics::cannon_ball_radiation_pressure ) );
     accelerationsOfSatellite[ "Sun" ].push_back( boost::make_shared< AccelerationSettings >(
-                                                   basic_astrodynamics::central_gravity ) );
+                                                     basic_astrodynamics::central_gravity ) );
     accelerationMap[ "Satellite" ] = accelerationsOfSatellite;
     basic_astrodynamics::AccelerationMap accelerationModelMap = createAccelerationModelsMap(
                 bodyMap, accelerationMap, bodiesToPropagate, centralBodies );
@@ -247,11 +247,6 @@ int main( )
                 convertCartesianToKeplerianElements( currentCartesianState, marsGravitationalParameter );
     }
 
-    // Convert history
-    std::map< double, Eigen::VectorXd > rotationIntegrationResultCopy = rotationIntegrationResult;
-    convertQuaternionHistoryToMatchSigns( rotationIntegrationResultCopy,
-                                          propagators::rotational_state );
-
     // Write perturbed satellite propagation history to file.
     writeDataMapToTextFile( cartesianIntegrationResult,
                             "translational.dat", getOutputPath( ),
@@ -262,13 +257,6 @@ int main( )
 
     writeDataMapToTextFile( rotationIntegrationResult,
                             "rotational.dat", getOutputPath( ),
-                            "",
-                            std::numeric_limits< double >::digits10,
-                            std::numeric_limits< double >::digits10,
-                            "," );
-
-    writeDataMapToTextFile( rotationIntegrationResultCopy,
-                            "rotationalCopy.dat", getOutputPath( ),
                             "",
                             std::numeric_limits< double >::digits10,
                             std::numeric_limits< double >::digits10,

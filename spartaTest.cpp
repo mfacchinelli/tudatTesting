@@ -12,11 +12,11 @@
 #include <Tudat/SimulationSetup/tudatSimulationHeader.h>
 
 #include "Tudat/Astrodynamics/Aerodynamics/tabulatedAtmosphere.h"
-#include "Tudat/Astrodynamics/Aerodynamics/rarefiedFlowAnalysis.h"
 
 #include "Tudat/Mathematics/BasicMathematics/mathematicalConstants.h"
 
-#include "Tudat/InputOutput/spartaInputOutput.h"
+#include "Tudat/External/SpartaInterface/rarefiedFlowAnalysis.h"
+#include "Tudat/External/SpartaInterface/spartaInputOutput.h"
 
 //! Get path for output directory.
 static inline std::string getOutputPath(
@@ -72,13 +72,12 @@ int main( )
     std::map< double, Eigen::Vector3d > atmosphere;
     Eigen::Vector3d currentAtmosphere;
     int i = 0;
-    for ( double h = 75; h <= 125; h++ )
+    for ( double h = 75; h <= 125; h++, i++ )
     {
         currentAtmosphere[ 0 ] = tabulatedAtmosphere.getDensity( h * 1e3 );
         currentAtmosphere[ 1 ] = tabulatedAtmosphere.getPressure( h * 1e3 );
         currentAtmosphere[ 2 ] = tabulatedAtmosphere.getTemperature( h * 1e3 );
         atmosphere[ h * 1e3 ] = currentAtmosphere;
-        i++;
     }
 
     writeDataMapToTextFile( atmosphere,

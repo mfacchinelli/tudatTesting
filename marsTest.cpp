@@ -52,7 +52,6 @@ int main( )
     using namespace tudat::gravitation;
     using namespace tudat::numerical_integrators;
 
-
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ///////////////////////     CREATE ENVIRONMENT AND VEHICLE       //////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -76,6 +75,14 @@ int main( )
     bodiesToCreate.push_back( "Jupiter" );
     bodiesToCreate.push_back( "Saturn" );
 
+    // Atmosphere
+    std::string atmosphereFile = "/Users/Michele/GitHub/tudat/tudatBundle/tudat/Tudat/External/AtmosphereTables/MCDMeanAtmosphere.dat";
+    std::vector< aerodynamics::AtmosphereDependentVariables > atmosphereDependentVariables;
+    for ( unsigned int i = 0; i < 6; i++ )
+    {
+        atmosphereDependentVariables.push_back( static_cast< aerodynamics::AtmosphereDependentVariables >( i ) );
+    }
+
     // Create body objects.
     std::map< std::string, boost::shared_ptr< BodySettings > > bodySettings =
             getDefaultBodySettings( bodiesToCreate, simulationStartEpoch - 300.0, simulationEndEpoch + 300.0 );
@@ -84,10 +91,10 @@ int main( )
         bodySettings[ bodiesToCreate.at( i ) ]->ephemerisSettings->resetFrameOrientation( "J2000" );
         bodySettings[ bodiesToCreate.at( i ) ]->rotationModelSettings->resetOriginalFrame( "J2000" );
     }
-    bodySettings[ "Mars" ]->gravityFieldSettings = boost::make_shared< FromFileSphericalHarmonicsGravityFieldSettings >( jgmro120d );
-    std::string atmosphereFile = "/Users/Michele/GitHub/tudat/tudatBundle/tudat/Tudat/External/AtmosphereTables/MCDMeanAtmosphere.dat";
-    bodySettings[ "Mars" ]->atmosphereSettings = boost::make_shared< TabulatedAtmosphereSettings >( atmosphereFile );
-//    bodySettings[ "Mars" ]->atmosphereSettings = boost::make_shared< ExponentialAtmosphereSettings >( 11.1E3, 215.0, 0.02, 197.0 );
+    bodySettings[ "Mars" ]->gravityFieldSettings =
+            boost::make_shared< FromFileSphericalHarmonicsGravityFieldSettings >( jgmro120d );
+    bodySettings[ "Mars" ]->atmosphereSettings =
+            boost::make_shared< TabulatedAtmosphereSettings >( atmosphereFile, atmosphereDependentVariables );
     NamedBodyMap bodyMap = createBodies( bodySettings );
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -95,8 +102,8 @@ int main( )
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     // Create spacecraft object.
-    bodyMap[ "Asterix" ] = boost::make_shared< simulation_setup::Body >( );
-    bodyMap[ "Asterix" ]->setConstantBodyMass( 1000.0 );
+    bodyMap[ "Satellite" ] = boost::make_shared< simulation_setup::Body >( );
+    bodyMap[ "Satellite" ]->setConstantBodyMass( 1000.0 );
 
     // Create aerodynamic coefficient interface settings.
     double referenceArea = 37.5;
@@ -106,8 +113,8 @@ int main( )
                 referenceArea, aerodynamicCoefficient * Eigen::Vector3d::UnitX( ), 1, 1 );
 
     // Create and set aerodynamic coefficients object
-    bodyMap[ "Asterix" ]->setAerodynamicCoefficientInterface(
-                createAerodynamicCoefficientInterface( aerodynamicCoefficientSettings, "Asterix" ) );
+    bodyMap[ "Satellite" ]->setAerodynamicCoefficientInterface(
+                createAerodynamicCoefficientInterface( aerodynamicCoefficientSettings, "Satellite" ) );
 
     // Create radiation pressure settings
     double referenceAreaRadiation = 37.5;
@@ -119,9 +126,9 @@ int main( )
                 "Sun", referenceAreaRadiation, radiationPressureCoefficient, occultingBodies );
 
     // Create and set radiation pressure settings
-    bodyMap[ "Asterix" ]->setRadiationPressureInterface(
+    bodyMap[ "Satellite" ]->setRadiationPressureInterface(
                 "Sun", createRadiationPressureInterface(
-                    asterixRadiationPressureSettings, "Asterix", bodyMap ) );
+                    asterixRadiationPressureSettings, "Satellite", bodyMap ) );
 
     // Finalize body creation.
     setGlobalFrameBodyEphemerides( bodyMap, "SSB", "J2000" );
@@ -136,25 +143,24 @@ int main( )
     std::vector< std::string > centralBodies;
 
     // Define propagation settings.
-    std::map< std::string, std::vector< boost::shared_ptr< AccelerationSettings > > > accelerationsOfAsterix;
-    accelerationsOfAsterix[ "Mars" ].push_back( boost::make_shared< SphericalHarmonicAccelerationSettings >( 21, 21 ) );
-    accelerationsOfAsterix[ "Mars" ].push_back( boost::make_shared< AccelerationSettings >(
-                                                     basic_astrodynamics::aerodynamic ) );
-    accelerationsOfAsterix[ "Sun" ].push_back( boost::make_shared< AccelerationSettings >(
+    std::map< std::string, std::vector< boost::shared_ptr< AccelerationSettings > > > accelerationsOfSatellite;
+    accelerationsOfSatellite[ "Mars" ].push_back(
+                boost::make_shared< SphericalHarmonicAccelerationSettings >( 21, 21 ) );
+    for( unsigned int i = 0; i < bodiesToCreate.size( ); i++ )
+    {
+        if ( bodiesToCreate.at( i ) != "Mars" )
+        {
+            accelerationsOfSatellite[ bodiesToCreate.at( i ) ].push_back(
+                        boost::make_shared< AccelerationSettings >( basic_astrodynamics::central_gravity ) );
+        }
+    }
+    accelerationsOfSatellite[ "Sun" ].push_back( boost::make_shared< AccelerationSettings >(
                                                      basic_astrodynamics::cannon_ball_radiation_pressure ) );
-    accelerationsOfAsterix[ "Sun" ].push_back( boost::make_shared< AccelerationSettings >( 
-                                                   basic_astrodynamics::central_gravity ) );
-    accelerationsOfAsterix[ "Venus" ].push_back( boost::make_shared< AccelerationSettings >(
-                                                     basic_astrodynamics::central_gravity ) );
-    accelerationsOfAsterix[ "Earth" ].push_back( boost::make_shared< AccelerationSettings >(
-                                                     basic_astrodynamics::central_gravity ) );
-    accelerationsOfAsterix[ "Jupiter" ].push_back( boost::make_shared< AccelerationSettings >(
-                                                     basic_astrodynamics::central_gravity ) );
-    accelerationsOfAsterix[ "Saturn" ].push_back( boost::make_shared< AccelerationSettings >(
-                                                     basic_astrodynamics::central_gravity ) );
+    accelerationsOfSatellite[ "Mars" ].push_back( boost::make_shared< AccelerationSettings >(
+                                                      basic_astrodynamics::aerodynamic ) );
 
-    accelerationMap[ "Asterix" ] = accelerationsOfAsterix;
-    bodiesToPropagate.push_back( "Asterix" );
+    accelerationMap[ "Satellite" ] = accelerationsOfSatellite;
+    bodiesToPropagate.push_back( "Satellite" );
     centralBodies.push_back( "Mars" );
 
     basic_astrodynamics::AccelerationMap accelerationModelMap = createAccelerationModelsMap(
@@ -179,36 +185,20 @@ int main( )
     const Eigen::Vector6d asterixInitialState = convertKeplerianToCartesianElements(
                 asterixInitialStateInKeplerianElements, marsGravitationalParameter );
 
-    // Dependent variables
-    std::vector< boost::shared_ptr< SingleDependentVariableSaveSettings > > dependentVariables;
-    dependentVariables.push_back( boost::make_shared< SingleAccelerationDependentVariableSaveSettings >(
-                    basic_astrodynamics::spherical_harmonic_gravity, "Asterix", "Mars", true ) );
-    dependentVariables.push_back( boost::make_shared< SingleAccelerationDependentVariableSaveSettings >(
-                    basic_astrodynamics::aerodynamic, "Asterix", "Mars", true ) );
-    dependentVariables.push_back( boost::make_shared< SingleAccelerationDependentVariableSaveSettings >(
-                    basic_astrodynamics::cannon_ball_radiation_pressure, "Asterix", "Sun", true ) );
-    dependentVariables.push_back( boost::make_shared< SingleAccelerationDependentVariableSaveSettings >(
-                    basic_astrodynamics::third_body_central_gravity, "Asterix", "Sun", true ) );
-    dependentVariables.push_back( boost::make_shared< SingleAccelerationDependentVariableSaveSettings >(
-                    basic_astrodynamics::third_body_central_gravity, "Asterix", "Venus", true ) );
-    dependentVariables.push_back( boost::make_shared< SingleAccelerationDependentVariableSaveSettings >(
-                    basic_astrodynamics::third_body_central_gravity, "Asterix", "Earth", true ) );
-    dependentVariables.push_back( boost::make_shared< SingleAccelerationDependentVariableSaveSettings >(
-                    basic_astrodynamics::third_body_central_gravity, "Asterix", "Jupiter", true ) );
-    dependentVariables.push_back( boost::make_shared< SingleAccelerationDependentVariableSaveSettings >(
-                    basic_astrodynamics::third_body_central_gravity, "Asterix", "Saturn", true ) );
-
     // Propagator settings
     boost::shared_ptr< TranslationalStatePropagatorSettings< double > > propagatorSettings =
             boost::make_shared< TranslationalStatePropagatorSettings< double > >
-            ( centralBodies, accelerationModelMap, bodiesToPropagate, asterixInitialState, simulationEndEpoch, cowell,
-              boost::make_shared< DependentVariableSaveSettings >( dependentVariables ) );
+            ( centralBodies, accelerationModelMap, bodiesToPropagate, asterixInitialState, simulationEndEpoch,
+              unified_state_model_exponential_map ); // unified_state_model_exponential_map
 
     // Integrator settings
+//    boost::shared_ptr< IntegratorSettings< > > integratorSettings =
+//            boost::make_shared< RungeKuttaVariableStepSizeSettings< > >(
+//                rungeKuttaVariableStepSize, simulationStartEpoch, 1.0,
+//                RungeKuttaCoefficients::rungeKuttaFehlberg56, 1e-3, 1e3, 1e-12, 1e-12 );
     boost::shared_ptr< IntegratorSettings< > > integratorSettings =
-            boost::make_shared< RungeKuttaVariableStepSizeSettings< > >(
-                rungeKuttaVariableStepSize, simulationStartEpoch, 1.0,
-                RungeKuttaCoefficients::rungeKuttaFehlberg56, 1e-3, 1e1, 1e-15, 1e-15 );
+            boost::make_shared< IntegratorSettings< > > (
+                rungeKutta4, simulationStartEpoch, 1.0 );
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ///////////////////////             PROPAGATE ORBIT            ////////////////////////////////////////////////////////
@@ -218,8 +208,8 @@ int main( )
     SingleArcDynamicsSimulator< > dynamicsSimulator(
                 bodyMap, integratorSettings, propagatorSettings, true, false, false );
     std::map< double, Eigen::VectorXd > cartesianIntegrationResult = dynamicsSimulator.getEquationsOfMotionNumericalSolution( );
+    std::map< double, Eigen::VectorXd > rawIntegrationResult = dynamicsSimulator.getEquationsOfMotionNumericalSolutionRaw( );
     std::map< double, Eigen::VectorXd > keplerianIntegrationResult;
-    std::map< double, Eigen::VectorXd > dependentVariableSolution = dynamicsSimulator.getDependentVariableHistory( );
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ///////////////////////        PROVIDE OUTPUT TO CONSOLE AND FILES           //////////////////////////////////////////
@@ -232,13 +222,6 @@ int main( )
     {
         // Retrieve current Cartesian state (convert to Mars-centered frame if needed)
         currentCartesianState = stateIterator->second;
-
-        if( centralBodies.at( 0 ) == "SSB" )
-        {
-            currentCartesianState -=
-                    bodyMap[ "Mars" ]->getStateInBaseFrameFromEphemeris( stateIterator->first );
-        }
-
         keplerianIntegrationResult[ stateIterator->first ] =
                 convertCartesianToKeplerianElements( currentCartesianState, marsGravitationalParameter );
     }
@@ -251,15 +234,9 @@ int main( )
                                           std::numeric_limits< double >::digits10,
                                           "," );
 
-    input_output::writeDataMapToTextFile( keplerianIntegrationResult,
-                                          "orbit.dat", getOutputPath( ),
-                                          "",
-                                          std::numeric_limits< double >::digits10,
-                                          std::numeric_limits< double >::digits10,
-                                          "," );
-
-    input_output::writeDataMapToTextFile( dependentVariableSolution,
-                                          "dependent.dat", getOutputPath( ),
+    // Write perturbed satellite propagation history to file.
+    input_output::writeDataMapToTextFile( rawIntegrationResult,
+                                          "raw.dat", getOutputPath( ),
                                           "",
                                           std::numeric_limits< double >::digits10,
                                           std::numeric_limits< double >::digits10,
