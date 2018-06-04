@@ -320,7 +320,7 @@ int main( )
     // Create body objects.
     std::map< std::string, boost::shared_ptr< BodySettings > > bodySettings =
             getDefaultBodySettings( bodiesToCreate, simulationStartEpoch - 300.0, simulationEndEpoch + 300.0 );
-    for( unsigned int i = 0; i < bodiesToCreate.size( ); i++ )
+    for ( unsigned int i = 0; i < bodiesToCreate.size( ); i++ )
     {
         bodySettings[ bodiesToCreate.at( i ) ]->ephemerisSettings->resetFrameOrientation( "J2000" );
         bodySettings[ bodiesToCreate.at( i ) ]->rotationModelSettings->resetOriginalFrame( "J2000" );
@@ -332,16 +332,11 @@ int main( )
     {
         // Tabulated atmosphere settings
         std::map< int, std::string > tabulatedAtmosphereFiles;
-        tabulatedAtmosphereFiles[ 0 ] = getAtmosphereTablesPath( ) +
-                "MCDMeanAtmosphereTimeAverage/density.dat";
-        tabulatedAtmosphereFiles[ 1 ] = getAtmosphereTablesPath( ) +
-                "MCDMeanAtmosphereTimeAverage/pressure.dat";
-        tabulatedAtmosphereFiles[ 2 ] = getAtmosphereTablesPath( ) +
-                "MCDMeanAtmosphereTimeAverage/temperature.dat";
-        tabulatedAtmosphereFiles[ 3 ] = getAtmosphereTablesPath( ) +
-                "MCDMeanAtmosphereTimeAverage/gasConstant.dat";
-        tabulatedAtmosphereFiles[ 4 ] = getAtmosphereTablesPath( ) +
-                "MCDMeanAtmosphereTimeAverage/specificHeatRatio.dat";
+        tabulatedAtmosphereFiles[ 0 ] = getAtmosphereTablesPath( ) + "MCDMeanAtmosphereTimeAverage/density.dat";
+        tabulatedAtmosphereFiles[ 1 ] = getAtmosphereTablesPath( ) + "MCDMeanAtmosphereTimeAverage/pressure.dat";
+        tabulatedAtmosphereFiles[ 2 ] = getAtmosphereTablesPath( ) + "MCDMeanAtmosphereTimeAverage/temperature.dat";
+        tabulatedAtmosphereFiles[ 3 ] = getAtmosphereTablesPath( ) + "MCDMeanAtmosphereTimeAverage/gasConstant.dat";
+        tabulatedAtmosphereFiles[ 4 ] = getAtmosphereTablesPath( ) + "MCDMeanAtmosphereTimeAverage/specificHeatRatio.dat";
         std::vector< AtmosphereDependentVariables > atmosphereDependentVariables = {
             density_dependent_atmosphere, pressure_dependent_atmosphere, temperature_dependent_atmosphere,
             gas_constant_dependent_atmosphere, specific_heat_ratio_dependent_atmosphere };
@@ -371,7 +366,7 @@ int main( )
         bodySettings[ simulationCentralBody ]->gravityFieldSettings = boost::make_shared<
                 FromFileSphericalHarmonicsGravityFieldSettings >( ggm02s );
         bodySettings[ simulationCentralBody ]->atmosphereSettings = boost::make_shared< ExponentialAtmosphereSettings >(
-                    7050, 240.0, 1.225, 2.87e2 );
+                    7050.0, 240.0, 1.225, 2.87e2 );
         break;
     }
     }
@@ -382,7 +377,7 @@ int main( )
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     // Create spacecraft object.
-    bodyMap[ "Satellite" ] = boost::make_shared< simulation_setup::Body >( );
+    bodyMap[ "Satellite" ] = boost::make_shared< Body >( );
     const double vehicleMass = 1000.0;
     bodyMap[ "Satellite" ]->setConstantBodyMass( vehicleMass );
 
@@ -400,7 +395,7 @@ int main( )
                                            "University/Master Thesis/Code/MATLAB/data/MROLiftCoefficients.txt";
 
         // Create aerodynamic coefficient interface settings.
-        aerodynamicCoefficientSettings = simulation_setup::readTabulatedAerodynamicCoefficientsFromFiles(
+        aerodynamicCoefficientSettings = readTabulatedAerodynamicCoefficientsFromFiles(
                     aerodynamicCoefficientFiles, referenceAreaAerodynamic,
                     boost::assign::list_of( aerodynamics::angle_of_attack_dependent )( aerodynamics::altitude_dependent ),
                     true, true );
@@ -412,7 +407,6 @@ int main( )
         aerodynamicCoefficientSettings = boost::make_shared< ConstantAerodynamicCoefficientSettings >(
                     referenceAreaAerodynamic, aerodynamicCoefficients, true, true );
     }
-
     bodyMap[ "Satellite" ]->setAerodynamicCoefficientInterface(
                 createAerodynamicCoefficientInterface( aerodynamicCoefficientSettings, "Satellite" ) );
 
@@ -426,8 +420,7 @@ int main( )
                 "Sun", referenceAreaRadiation, radiationPressureCoefficient, occultingBodies );
 
     // Create and set radiation pressure settings
-    bodyMap[ "Satellite" ]->setRadiationPressureInterface(
-                "Sun", createRadiationPressureInterface(
+    bodyMap[ "Satellite" ]->setRadiationPressureInterface( "Sun", createRadiationPressureInterface(
                     SatelliteRadiationPressureSettings, "Satellite", bodyMap ) );
 
     // Finalize body creation.
@@ -462,11 +455,12 @@ int main( )
             accelerationsOfSatellite[ simulationCentralBody ].push_back(
                         boost::make_shared< SphericalHarmonicAccelerationSettings >( limitingSphericalHarminics,
                                                                                      limitingSphericalHarminics ) );
-            for( unsigned int i = 0; i < bodiesToCreate.size( ); i++ )
+            for ( unsigned int i = 0; i < bodiesToCreate.size( ); i++ )
             {
                 if ( bodiesToCreate.at( i ) != simulationCentralBody )
                 {
-                    accelerationsOfSatellite[ bodiesToCreate.at( i ) ].push_back( boost::make_shared< AccelerationSettings >( central_gravity ) );
+                    accelerationsOfSatellite[ bodiesToCreate.at( i ) ].push_back( boost::make_shared< AccelerationSettings >(
+                                                                                      central_gravity ) );
                 }
             }
             accelerationsOfSatellite[ "Sun" ].push_back( boost::make_shared< AccelerationSettings >( cannon_ball_radiation_pressure ) );
@@ -479,26 +473,20 @@ int main( )
             // Define thrust settings
             double thrustMagnitude = 9.81;
             double specificImpulse = 5000.0;
-//            boost::shared_ptr< ThrustDirectionGuidanceSettings > thrustDirectionGuidanceSettings =
-//                    boost::make_shared< CustomThrustDirectionSettings >(
-//                        boost::lambda::constant( Eigen::Vector3d::UnitX( ) ) );
             boost::shared_ptr< ThrustDirectionGuidanceSettings > thrustDirectionGuidanceSettings =
-                    boost::make_shared< ThrustDirectionFromStateGuidanceSettings >(
-                        simulationCentralBody, true, false );
+                    boost::make_shared< ThrustDirectionFromStateGuidanceSettings >( simulationCentralBody, true, false );
             boost::shared_ptr< ThrustEngineSettings > thrustMagnitudeSettings =
-                    boost::make_shared< ConstantThrustEngineSettings >(
-                        thrustMagnitude, specificImpulse );
+                    boost::make_shared< ConstantThrustEngineSettings >( thrustMagnitude, specificImpulse );
 
             // Define thrust acceleration settings
             accelerationsOfSatellite[ "Satellite" ].push_back(
-                        boost::make_shared< ThrustAccelerationSettings >( thrustDirectionGuidanceSettings,
-                                                                          thrustMagnitudeSettings) );
+                        boost::make_shared< ThrustAccelerationSettings >( thrustDirectionGuidanceSettings, thrustMagnitudeSettings ) );
         }
         break;
     }
     case 2:
     {
-        for( unsigned int i = 0; i < bodiesToCreate.size( ); i++ )
+        for ( unsigned int i = 0; i < bodiesToCreate.size( ); i++ )
         {
             accelerationsOfSatellite[ bodiesToCreate.at( i ) ].push_back( boost::make_shared< AccelerationSettings >( central_gravity ) );
         }
@@ -565,9 +553,9 @@ int main( )
                     if ( propagatorType == 7 )
                     {
                         // Propagator
-                        translationalPropagatorSettings = boost::make_shared< TranslationalStatePropagatorSettings< double > >
-                                ( centralBodies, accelerationModelMap, bodiesToPropagate, SatelliteInitialState, terminationSettings,
-                                  cowell );
+                        translationalPropagatorSettings = boost::make_shared< TranslationalStatePropagatorSettings< double > >(
+                                    centralBodies, accelerationModelMap, bodiesToPropagate, SatelliteInitialState, terminationSettings,
+                                    cowell );
 
                         // Integrator
                         integratorSettings = boost::make_shared< RungeKuttaVariableStepSizeSettings< > >(
@@ -578,9 +566,9 @@ int main( )
                     else
                     {
                         // Propagator
-                        translationalPropagatorSettings = boost::make_shared< TranslationalStatePropagatorSettings< double > >
-                                ( centralBodies, accelerationModelMap, bodiesToPropagate, SatelliteInitialState, simulationEndEpoch,
-                                  static_cast< TranslationalPropagatorType >( propagatorType ) );
+                        translationalPropagatorSettings = boost::make_shared< TranslationalStatePropagatorSettings< double > >(
+                                    centralBodies, accelerationModelMap, bodiesToPropagate, SatelliteInitialState, simulationEndEpoch,
+                                    static_cast< TranslationalPropagatorType >( propagatorType ) );
 
                         // Integrator
                         if ( integratorType == 0 )
@@ -653,7 +641,7 @@ int main( )
                     // Compute map of Kepler elements
                     Eigen::Vector6d cartesianState;
                     std::map< double, Eigen::VectorXd > keplerianIntegrationResult;
-                    for( std::map< double, Eigen::VectorXd >::const_iterator stateIterator = cartesianIntegrationResult.begin( );
+                    for ( std::map< double, Eigen::VectorXd >::const_iterator stateIterator = cartesianIntegrationResult.begin( );
                          stateIterator != cartesianIntegrationResult.end( ); stateIterator++ )
                     {
                         // Retrieve current Cartesian state (convert to Earth-centered frame if needed)
