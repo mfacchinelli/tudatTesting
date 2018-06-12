@@ -56,17 +56,15 @@ int main( )
     ///////////////////////     CREATE ENVIRONMENT AND VEHICLE       //////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    // Load Spice kernels.
-    spice_interface::loadSpiceKernelInTudat( input_output::getSpiceKernelPath( ) + "pck00009.tpc" );
-    spice_interface::loadSpiceKernelInTudat( input_output::getSpiceKernelPath( ) + "de-403-masses.tpc" );
-    spice_interface::loadSpiceKernelInTudat( input_output::getSpiceKernelPath( ) + "de421.bsp" );
+    // Load Spice kernels
+    spice_interface::loadStandardSpiceKernels( );
 
-    // Set simulation time settings.
+    // Set simulation time settings
     const double simulationStartEpoch = 7.0 * tudat::physical_constants::JULIAN_YEAR +
             30.0 * 6.0 * tudat::physical_constants::JULIAN_DAY;
     const double simulationEndEpoch = 1.0 * tudat::physical_constants::JULIAN_DAY + simulationStartEpoch;
 
-    // Define body settings for simulation.
+    // Define body settings for simulation
     std::vector< std::string > bodiesToCreate;
     bodiesToCreate.push_back( "Sun" );
     bodiesToCreate.push_back( "Venus" );
@@ -83,7 +81,7 @@ int main( )
         atmosphereDependentVariables.push_back( static_cast< aerodynamics::AtmosphereDependentVariables >( i ) );
     }
 
-    // Create body objects.
+    // Create body objects
     std::map< std::string, boost::shared_ptr< BodySettings > > bodySettings =
             getDefaultBodySettings( bodiesToCreate, simulationStartEpoch - 300.0, simulationEndEpoch + 300.0 );
     for( unsigned int i = 0; i < bodiesToCreate.size( ); i++ )

@@ -98,11 +98,11 @@ int main( )
 
     // Create Keplerian elements vector
     Eigen::Vector6d keplerianElements = Eigen::Vector6d::Zero( );
-    keplerianElements( semiMajorAxisIndex ) = 1.5e11;
+    keplerianElements( semiMajorAxisIndex ) = 6378.1363e3 + 1000e3;
     keplerianElements( eccentricityIndex ) = 0.25;
 
     // Standard gravitational parameter
-    const double centralBodyGravitationalParameter = 1.32712440018e20; // [m^3/s^2]
+    const double centralBodyGravitationalParameter = 3.9860044189e14; // [m^3/s^2]
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ///////////////////////       CONVERT TO AND FROM USM            //////////////////////////////////////////////////////
@@ -357,33 +357,26 @@ int main( )
         ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
         // Write perturbed satellite propagation history to file.
-        input_output::writeDataMapToTextFile( keplerianElementsInput,
-                                              "kepler_input_" + std::to_string( conversionMode ) + ".dat",
-                                              getOutputPath( "Conversions" ) );
+        writeDataMapToTextFile( keplerianElementsInput,
+                                "kepler_input_" + std::to_string( conversionMode ) + ".dat", getOutputPath( "Conversions" ) );
 
-        input_output::writeDataMapToTextFile( keplerianElementsUSM7Output,
-                                              "kepler_usm7_output_" + std::to_string( conversionMode ) + ".dat",
-                                              getOutputPath( "Conversions" ) );
+        writeDataMapToTextFile( keplerianElementsUSM7Output,
+                                "kepler_usm7_output_" + std::to_string( conversionMode ) + ".dat", getOutputPath( "Conversions" ) );
 
-        input_output::writeDataMapToTextFile( keplerianElementsUSM6Output,
-                                              "kepler_usm6_output_" + std::to_string( conversionMode ) + ".dat",
-                                              getOutputPath( "Conversions" ) );
+        writeDataMapToTextFile( keplerianElementsUSM6Output,
+                                "kepler_usm6_output_" + std::to_string( conversionMode ) + ".dat", getOutputPath( "Conversions" ) );
 
-        input_output::writeDataMapToTextFile( keplerianElementsUSMEMOutput,
-                                              "kepler_usmem_output_" + std::to_string( conversionMode ) + ".dat",
-                                              getOutputPath( "Conversions" ) );
+        writeDataMapToTextFile( keplerianElementsUSMEMOutput,
+                                "kepler_usmem_output_" + std::to_string( conversionMode ) + ".dat", getOutputPath( "Conversions" ) );
 
-        input_output::writeDataMapToTextFile( unifiedStateModelQuaternionsElementsOutput,
-                                              "usm7_output_" + std::to_string( conversionMode ) + ".dat",
-                                              getOutputPath( "Conversions" ) );
+        writeDataMapToTextFile( unifiedStateModelQuaternionsElementsOutput,
+                                "usm7_output_" + std::to_string( conversionMode ) + ".dat", getOutputPath( "Conversions" ) );
 
-        input_output::writeDataMapToTextFile( unifiedStateModelModifiedRodriguesParametersElementsOutput,
-                                              "usm6_output_" + std::to_string( conversionMode ) + ".dat",
-                                              getOutputPath( "Conversions" ) );
+        writeDataMapToTextFile( unifiedStateModelModifiedRodriguesParametersElementsOutput,
+                                "usm6_output_" + std::to_string( conversionMode ) + ".dat", getOutputPath( "Conversions" ) );
 
-        input_output::writeDataMapToTextFile( unifiedStateModelExponentialMapElementsOutput,
-                                              "usmem_output_" + std::to_string( conversionMode ) + ".dat",
-                                              getOutputPath( "Conversions" ) );
+        writeDataMapToTextFile( unifiedStateModelExponentialMapElementsOutput,
+                                "usmem_output_" + std::to_string( conversionMode ) + ".dat", getOutputPath( "Conversions" ) );
     }
 
     // Final statement.
