@@ -127,26 +127,12 @@ int main( )
     //      3: Circular orbit at LEO (Low Earth Orbit)
     //      4: Molniya orbit
     //      5: Low-thrust trajectory
-    std::vector< std::string > pathAdditionTestCase = { "aero", "aero_full", "inter", "circ", "moln", "low_thrust" };
-    bool singleCase = true;
-    unsigned int singleTestCase = 5;
-
-    // Set limits for loop based on user choice
-    unsigned int testCaseStart;
-    unsigned int testCaseEnd;
-    if ( singleCase )
-    {
-        testCaseStart = singleTestCase;
-        testCaseEnd = singleTestCase + 1;
-    }
-    else
-    {
-        testCaseStart = 0;
-        testCaseEnd = 6;
-    }
+    const std::vector< std::string > pathAdditionTestCase = { "aero", "aero_full", "inter", "circ", "moln", "low_thrust" };
+    const bool singleTestCase = true;
+    unsigned int initialTestCase = 2;
 
     // Start loop
-    for ( unsigned int testCase = testCaseStart; testCase < testCaseEnd; testCase++ )
+    for ( unsigned int testCase = initialTestCase; testCase < 6; testCase++ )
     {
         ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         ///////////////////////            DEFINE TEST CASES             //////////////////////////////////////////////////////
@@ -173,8 +159,10 @@ int main( )
         Eigen::VectorXd cartesianTolerances;
         Eigen::VectorXd usmTolerances;
 
-        // Select conditions based on case
+        // Thrust values for 6th case
         std::vector< double > thrustMagnitudes;
+
+        // Select conditions based on case
         switch ( testCase )
         {
         case 0: // Aerocapture
@@ -316,7 +304,9 @@ int main( )
         // Fill in standard tolerances
         if ( !absoluteTolerancesSet )
         {
+            cartesianTolerances = Eigen::VectorXd::Zero( 6 );
             cartesianTolerances = Eigen::VectorXd::Constant( 6, velocityTolerance );
+            usmTolerances = Eigen::VectorXd::Zero( 7 );
             usmTolerances.segment( 0, 3 ) = Eigen::VectorXd::Constant( 3, velocityTolerance );
             usmTolerances.segment( 3, 4 ) = Eigen::VectorXd::Constant( 4, quaternionTolerance );
         }
@@ -335,8 +325,7 @@ int main( )
         spice_interface::loadStandardSpiceKernels( );
 
         // Set simulation time settings
-        const double simulationStartEpoch = 7.0 * physical_constants::JULIAN_YEAR +
-                30.0 * 6.0 * physical_constants::JULIAN_DAY;
+        const double simulationStartEpoch = 7.0 * physical_constants::JULIAN_YEAR + 30.0 * 6.0 * physical_constants::JULIAN_DAY;
         const double simulationEndEpoch = simulationDuration + simulationStartEpoch;
 
         // Define body settings for simulation
@@ -700,10 +689,6 @@ int main( )
 
                             ///////////////////////     PROPAGATE ORBIT                     ////////////////////////////////////////////
 
-                            // Timeing
-                            time_t startTime, endTime;
-                            startTime = time( 0 );
-
                             // Create simulation object and propagate dynamics.
                             SingleArcDynamicsSimulator< > dynamicsSimulator(
                                         bodyMap, integratorSettings, propagatorSettings, true, false, false, true );
@@ -714,10 +699,10 @@ int main( )
                                 usmIntegrationResult = dynamicsSimulator.getEquationsOfMotionNumericalSolutionRaw( );
                             }
                             std::map< double, unsigned int > functionEvaluationsMap = dynamicsSimulator.getCumulativeNumberOfFunctionEvaluations( );
+                            std::map< double, double > computationTimeMap = dynamicsSimulator.getCumulativeComputationTimeHistory( );
 
                             // Timing
-                            endTime = time( 0 );
-                            std::cout << "Propagation time: " << difftime( endTime, startTime ) << " s" << std::endl;
+                            std::cout << "Propagation time: " << computationTimeMap.rbegin( )->second << " s" << std::endl;
 
                             ///////////////////////     PROVIDE OUTPUT TO FILES             ////////////////////////////////////////////
 
@@ -767,14 +752,16 @@ int main( )
 
                             // Break loop if reference propagator
                             if ( propagatorType == 7 )
-                            {
                                 break;
-                            }
                         }
                     }
                 }
             }
         }
+
+        // Break loop if only one case is to be run
+        if ( singleTestCase )
+            break;
     }
 
     // Final statement.
