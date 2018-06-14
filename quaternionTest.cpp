@@ -237,15 +237,15 @@ int main( )
 
         ///////////////////////             PROPAGATE ORBIT            ////////////////////////////////////////////////////////
 
-        // Simulate for 10 times to get a more accurate computation time
+        // Simulate for 100 times to get a more accurate computation time
         std::vector< double > computationTimes;
-        unsigned int numberOfSimulations = ( quaternionNormalizationMethod != totalNumberOfMethods ) ? 10 : 1;
+        unsigned int numberOfSimulations = ( quaternionNormalizationMethod != totalNumberOfMethods ) ? 100 : 1;
         boost::shared_ptr< SingleArcDynamicsSimulator< > > dynamicsSimulator;
         for ( unsigned int currentSimulation = 0; currentSimulation < numberOfSimulations; currentSimulation++ )
         {
             // Create simulation object and propagate dynamics
             dynamicsSimulator = boost::make_shared< SingleArcDynamicsSimulator< > >(
-                        bodyMap, integratorSettings, propagatorSettings, true, false, false, true );
+                        bodyMap, integratorSettings, propagatorSettings, true, false, false, false );
             std::map< double, double > computationTimeMap = dynamicsSimulator->getCumulativeComputationTimeHistory( );
             computationTimes.push_back( computationTimeMap.rbegin( )->second );
         }

@@ -14,6 +14,7 @@
 
 #include <ctime>
 #include <Tudat/SimulationSetup/tudatSimulationHeader.h>
+#include "Tudat/Mathematics/Statistics/basicStatistics.h"
 
 //! Get path for output directory.
 static inline std::string getOutputPath(
@@ -128,7 +129,7 @@ int main( )
     //      4: Molniya orbit
     //      5: Low-thrust trajectory
     const std::vector< std::string > pathAdditionTestCase = { "aero", "aero_full", "inter", "circ", "moln", "low_thrust" };
-    const bool singleTestCase = true;
+    const bool singleTestCase = false;
     unsigned int initialTestCase = 2;
 
     // Start loop
@@ -207,7 +208,7 @@ int main( )
         {
             // Set simulation time settings.
             simulationDuration = 260.0 * physical_constants::JULIAN_DAY;
-            constantTimeStep = { 50.0, 100.0, 200.0, 400.0, 800.0, 1200.0, 1500.0 };
+            constantTimeStep = { 25.0, 50.0, 100.0, 200.0, 400.0, 800.0, 1200.0 };
 
             // Set simulation central body
             simulationCentralBody = "Sun";
@@ -647,9 +648,10 @@ int main( )
                                     integratorSettings = boost::make_shared< RungeKuttaVariableStepSizeSettings< > >(
                                                 rungeKuttaVariableStepSize, simulationStartEpoch, 100.0,
                                                 RungeKuttaCoefficients::rungeKuttaFehlberg56, 1e-5, 1e5,
-                                                Eigen::Matrix< double, Eigen::Dynamic, 1 >::Constant( stateSizes.at( propagatorType ),
-                                                                                                      relativeTolerance ),
-                                                absoluteTolerances.at( propagatorType ) );//, 1, false, 0.8, 4.0, 0.1, &computeNewStepSize );
+                                                relativeTolerance, relativeTolerance );
+//                                                Eigen::Matrix< double, Eigen::Dynamic, 1 >::Constant( stateSizes.at( propagatorType ),
+//                                                                                                      relativeTolerance ),
+//                                                absoluteTolerances.at( propagatorType ) );//, 1, false, 0.8, 4.0, 0.1, &computeNewStepSize );
                                 }
                                 else if ( integratorType == 1 )
                                 {
@@ -689,20 +691,29 @@ int main( )
 
                             ///////////////////////     PROPAGATE ORBIT                     ////////////////////////////////////////////
 
-                            // Create simulation object and propagate dynamics.
-                            SingleArcDynamicsSimulator< > dynamicsSimulator(
-                                        bodyMap, integratorSettings, propagatorSettings, true, false, false, true );
-                            std::map< double, Eigen::VectorXd > cartesianIntegrationResult = dynamicsSimulator.getEquationsOfMotionNumericalSolution( );
+
+                            // Simulate for 100 times to get a more accurate computation time
+                            std::vector< double > computationTimes;
+                            unsigned int numberOfSimulations = ( propagatorType == 7 ) ? 1 : 100;
+                            boost::shared_ptr< SingleArcDynamicsSimulator< > > dynamicsSimulator;
+                            for ( unsigned int currentSimulation = 0; currentSimulation < numberOfSimulations; currentSimulation++ )
+                            {
+                                // Create simulation object and propagate dynamics
+                                dynamicsSimulator = boost::make_shared< SingleArcDynamicsSimulator< > >(
+                                            bodyMap, integratorSettings, propagatorSettings, true, false, false, false );
+                                std::map< double, double > computationTimeMap = dynamicsSimulator->getCumulativeComputationTimeHistory( );
+                                computationTimes.push_back( computationTimeMap.rbegin( )->second );
+                            }
+                            std::cout << "Average Computation Time: " << statistics::computeSampleMean( computationTimes ) << " s" << std::endl;
+
+                            // Retrieve results
+                            std::map< double, Eigen::VectorXd > cartesianIntegrationResult = dynamicsSimulator->getEquationsOfMotionNumericalSolution( );
                             std::map< double, Eigen::VectorXd > usmIntegrationResult;
                             if ( propagatorType > 3 && propagatorType < 7 )
                             {
-                                usmIntegrationResult = dynamicsSimulator.getEquationsOfMotionNumericalSolutionRaw( );
+                                usmIntegrationResult = dynamicsSimulator->getEquationsOfMotionNumericalSolutionRaw( );
                             }
-                            std::map< double, unsigned int > functionEvaluationsMap = dynamicsSimulator.getCumulativeNumberOfFunctionEvaluations( );
-                            std::map< double, double > computationTimeMap = dynamicsSimulator.getCumulativeComputationTimeHistory( );
-
-                            // Timing
-                            std::cout << "Propagation time: " << computationTimeMap.rbegin( )->second << " s" << std::endl;
+                            std::map< double, unsigned int > functionEvaluationsMap = dynamicsSimulator->getCumulativeNumberOfFunctionEvaluations( );
 
                             ///////////////////////     PROVIDE OUTPUT TO FILES             ////////////////////////////////////////////
 
