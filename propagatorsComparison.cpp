@@ -501,7 +501,7 @@ int main( )
         for ( unsigned int simulationCase = 0; simulationCase < numberOfSimulationCases; simulationCase++ )
         {
             // Progress
-            std::cout << std::endl << "Simulation: " << simulationCase + 1 << std::endl;
+            std::cout << std::endl << "Simulation " << simulationCase + 1 << " out of " << numberOfSimulationCases << std::endl;
 
             // Define propagator settings variables.
             SelectedAccelerationMap accelerationMap;
@@ -531,13 +531,16 @@ int main( )
             case 3:
             case 4:
             {
+                // Switch between Kepler orbit or perturbed environment
                 bool keplerOrbit = false;
                 if ( keplerOrbit )
                 {
+                    // Only central gravity
                     accelerationsOfSatellite[ simulationCentralBody ].push_back( boost::make_shared< AccelerationSettings >( central_gravity ) );
                 }
                 else
                 {
+                    // Define spherical harmonics, third bodies, solar radiation and aerodynamic forces
                     accelerationsOfSatellite[ simulationCentralBody ].push_back(
                                 boost::make_shared< SphericalHarmonicAccelerationSettings >( limitingSphericalHarminics,
                                                                                              limitingSphericalHarminics ) );
@@ -556,6 +559,7 @@ int main( )
             }
             case 2:
             {
+                // Define central gravity for central and third bodies and solar radiation
                 for ( unsigned int i = 0; i < bodiesToCreate.size( ); i++ )
                 {
                     accelerationsOfSatellite[ bodiesToCreate.at( i ) ].push_back( boost::make_shared< AccelerationSettings >( central_gravity ) );
