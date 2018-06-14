@@ -295,7 +295,7 @@ int main( )
             limitingSphericalHarminics = 21;
 
             // Set thurst settings
-            thrustMagnitudes = { 1e-2, 1e-1, 1e0, 1e1, 1e2 };
+            thrustMagnitudes = { 5e-3, 5e-2, 5e-1, 5e0, 5e1 };
             numberOfSimulationCases = thrustMagnitudes.size( );
 
             // Initial conditions
@@ -445,8 +445,8 @@ int main( )
 
         // Create spacecraft object
         bodyMap[ "Satellite" ] = boost::make_shared< Body >( );
-        const double vehicleMass = 1000.0;
-        bodyMap[ "Satellite" ]->setConstantBodyMass( vehicleMass );
+        const double satelliteMass = 1000.0;
+        bodyMap[ "Satellite" ]->setConstantBodyMass( satelliteMass );
 
         // Aerodynamic parameters
         const bool readAerodynamicCoefficientsFromFile = true;
@@ -512,11 +512,24 @@ int main( )
             std::map< std::string, std::vector< boost::shared_ptr< AccelerationSettings > > > accelerationsOfSatellite;
             switch ( testCase )
             {
+            case 5:
+            {
+                // Define thrust settings
+                double specificImpulse = 5000.0;
+                boost::shared_ptr< ThrustDirectionGuidanceSettings > thrustDirectionGuidanceSettings =
+                        boost::make_shared< ThrustDirectionFromStateGuidanceSettings >( simulationCentralBody, true, false );
+                boost::shared_ptr< ThrustEngineSettings > thrustMagnitudeSettings =
+                        boost::make_shared< ConstantThrustEngineSettings >( thrustMagnitudes.at( simulationCase ), specificImpulse );
+
+                // Define thrust acceleration settings
+                accelerationsOfSatellite[ "Satellite" ].push_back(
+                            boost::make_shared< ThrustAccelerationSettings >( thrustDirectionGuidanceSettings, thrustMagnitudeSettings ) );
+                // no break, so add more accelerations
+            }
             case 0:
             case 1:
             case 3:
             case 4:
-            case 5:
             {
                 bool keplerOrbit = false;
                 if ( keplerOrbit )
@@ -538,21 +551,6 @@ int main( )
                     }
                     accelerationsOfSatellite[ "Sun" ].push_back( boost::make_shared< AccelerationSettings >( cannon_ball_radiation_pressure ) );
                     accelerationsOfSatellite[ simulationCentralBody ].push_back( boost::make_shared< AccelerationSettings >( aerodynamic ) );
-                }
-
-                // Add thrust acceleration if 5th case
-                if ( testCase == 5 )
-                {
-                    // Define thrust settings
-                    double specificImpulse = 5000.0;
-                    boost::shared_ptr< ThrustDirectionGuidanceSettings > thrustDirectionGuidanceSettings =
-                            boost::make_shared< ThrustDirectionFromStateGuidanceSettings >( simulationCentralBody, true, false );
-                    boost::shared_ptr< ThrustEngineSettings > thrustMagnitudeSettings =
-                            boost::make_shared< ConstantThrustEngineSettings >( thrustMagnitudes.at( simulationCase ), specificImpulse );
-
-                    // Define thrust acceleration settings
-                    accelerationsOfSatellite[ "Satellite" ].push_back(
-                                boost::make_shared< ThrustAccelerationSettings >( thrustDirectionGuidanceSettings, thrustMagnitudeSettings ) );
                 }
                 break;
             }
@@ -686,7 +684,7 @@ int main( )
                                 bodiesWithMassToPropagate.push_back( "Satellite" );
 
                                 Eigen::VectorXd initialBodyMasses = Eigen::VectorXd( 1 );
-                                initialBodyMasses( 0 ) = vehicleMass;
+                                initialBodyMasses( 0 ) = satelliteMass;
 
                                 boost::shared_ptr< SingleArcPropagatorSettings< double > > massPropagatorSettings =
                                         boost::make_shared< MassPropagatorSettings< double > >(
@@ -713,7 +711,7 @@ int main( )
                             {
                                 usmIntegrationResult = dynamicsSimulator.getEquationsOfMotionNumericalSolutionRaw( );
                             }
-                            std::map< double, double > functionEvaluationsMap = dynamicsSimulator.getCumulativeNumberOfFunctionEvaluations( );
+                            std::map< double, unsigned int > functionEvaluationsMap = dynamicsSimulator.getCumulativeNumberOfFunctionEvaluations( );
 
                             // Timing
                             endTime = time( 0 );
