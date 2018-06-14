@@ -12,9 +12,10 @@
  *          AIAA/AAS Astrodynamics Specialist Conference. 2012.
  */
 
-#include <ctime>
 #include <Tudat/SimulationSetup/tudatSimulationHeader.h>
 #include "Tudat/Mathematics/Statistics/basicStatistics.h"
+#include "Tudat/InputOutput/basicInputOutput.h"
+#include "Tudat/Basics/utilities.h"
 
 //! Get path for output directory.
 static inline std::string getOutputPath(
@@ -130,11 +131,16 @@ int main( )
     //      5: Low-thrust trajectory
     const std::vector< std::string > pathAdditionTestCase = { "aero", "aero_full", "inter", "circ", "moln", "low_thrust" };
     const bool singleTestCase = false;
-    unsigned int initialTestCase = 2;
+    unsigned int initialTestCase = 0;
+    initialTestCase = singleTestCase ? initialTestCase : 0;
 
     // Start loop
+    std::map< unsigned int, std::vector< double > > totalComputationTimes;
     for ( unsigned int testCase = initialTestCase; testCase < 6; testCase++ )
     {
+        // Progress
+        std::cout << std::endl << "Test case " << testCase + 1 << " out of 6" << std::endl;
+
         ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         ///////////////////////            DEFINE TEST CASES             //////////////////////////////////////////////////////
         ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -486,6 +492,7 @@ int main( )
         ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
         // Loop over simulation cases
+        std::vector< double > computationTimesPerCase;
         for ( unsigned int simulationCase = 0; simulationCase < numberOfSimulationCases; simulationCase++ )
         {
             // Progress
@@ -700,11 +707,12 @@ int main( )
                             {
                                 // Create simulation object and propagate dynamics
                                 dynamicsSimulator = boost::make_shared< SingleArcDynamicsSimulator< > >(
-                                            bodyMap, integratorSettings, propagatorSettings, true, false, false, false );
+                                            bodyMap, integratorSettings, propagatorSettings, true, false, false, true );
                                 std::map< double, double > computationTimeMap = dynamicsSimulator->getCumulativeComputationTimeHistory( );
                                 computationTimes.push_back( computationTimeMap.rbegin( )->second );
                             }
-                            std::cout << "Average Computation Time: " << statistics::computeSampleMean( computationTimes ) << " s" << std::endl;
+                            computationTimesPerCase.push_back( statistics::computeSampleMean( computationTimes ) );
+                            std::cout << "Average Computation Time: " << computationTimesPerCase.back( ) << " s" << std::endl;
 
                             // Retrieve results
                             std::map< double, Eigen::VectorXd > cartesianIntegrationResult = dynamicsSimulator->getEquationsOfMotionNumericalSolution( );
@@ -770,12 +778,29 @@ int main( )
             }
         }
 
+        // Save current computation times
+        totalComputationTimes[ testCase ] = computationTimesPerCase;
+
         // Break loop if only one case is to be run
         if ( singleTestCase )
             break;
     }
 
-    // Final statement.
-    // The exit code EXIT_SUCCESS indicates that the program was successfully executed.
+    // Save mean computation times to file
+    if ( !singleTestCase )
+    {
+        std::cout << "Saving computation times." << std::endl;
+        std::map< unsigned int, Eigen::ArrayXd > convertedComputationTimesPerCase =
+                utilities::convertStlVectorMapToEigenVectorMap( totalComputationTimes );
+        std::ofstream fileOfComputationTimes( getOutputPath( "Propagators/" ) + "computationTimes.dat" );
+        for ( std::map< unsigned int, Eigen::ArrayXd >::const_iterator computationTimeIterator = convertedComputationTimesPerCase.begin( );
+              computationTimeIterator != convertedComputationTimesPerCase.end( ); computationTimeIterator++ )
+        {
+            writeValueToStream( fileOfComputationTimes, computationTimeIterator->second.transpose( ), 10, "" );
+        }
+    }
+
+    // Final statement
+    // The exit code EXIT_SUCCESS indicates that the program was successfully executed
     return EXIT_SUCCESS;
 }
