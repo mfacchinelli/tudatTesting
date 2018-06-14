@@ -9,6 +9,8 @@
  */
 
 #include <Tudat/SimulationSetup/tudatSimulationHeader.h>
+#include "Tudat/Mathematics/Statistics/basicStatistics.h"
+
 #include "Tudat/Astrodynamics/Propagators/quaternionNormalizationMethod.h"
 
 //! Get path for output directory.
@@ -68,58 +70,32 @@ int main( )
     spice_interface::loadStandardSpiceKernels( );
 
     // Set simulation time settings
-    const double simulationStartEpoch = 7.0 * tudat::physical_constants::JULIAN_YEAR +
-            30.0 * 6.0 * tudat::physical_constants::JULIAN_DAY;
-    const double simulationEndEpoch = 10.0 * tudat::physical_constants::JULIAN_DAY + simulationStartEpoch;
+    const double simulationStartEpoch = 7.0 * physical_constants::JULIAN_YEAR +
+            30.0 * 6.0 * physical_constants::JULIAN_DAY;
+    const double simulationEndEpoch = 100.0 * tudat::physical_constants::JULIAN_DAY + simulationStartEpoch;
 
     // Define body settings for simulation
     std::vector< std::string > bodiesToCreate;
-    bodiesToCreate.push_back( "Mars" );
-    bodiesToCreate.push_back( "Sun" );
     bodiesToCreate.push_back( "Earth" );
+    bodiesToCreate.push_back( "Sun" );
+    bodiesToCreate.push_back( "Moon" );
 
     // Create body objects
     std::map< std::string, boost::shared_ptr< BodySettings > > bodySettings =
             getDefaultBodySettings( bodiesToCreate, simulationStartEpoch - 1.0e3, simulationEndEpoch + 1.0e3 );
 
-    // Reset ephemerides
+    // Set ephemerides
     for ( unsigned int i = 0; i < bodiesToCreate.size( ); i++ )
     {
         bodySettings[ bodiesToCreate.at( i ) ]->ephemerisSettings->resetFrameOrientation( "J2000" );
         bodySettings[ bodiesToCreate.at( i ) ]->rotationModelSettings->resetOriginalFrame( "J2000" );
     }
 
-    // Tabulated atmosphere settings
-    std::map< int, std::string > tabulatedAtmosphereFiles;
-    tabulatedAtmosphereFiles[ 0 ] = getAtmosphereTablesPath( ) + "MCDMeanAtmosphereTimeAverage/density.dat";
-    tabulatedAtmosphereFiles[ 1 ] = getAtmosphereTablesPath( ) + "MCDMeanAtmosphereTimeAverage/pressure.dat";
-    tabulatedAtmosphereFiles[ 2 ] = getAtmosphereTablesPath( ) + "MCDMeanAtmosphereTimeAverage/temperature.dat";
-    tabulatedAtmosphereFiles[ 3 ] = getAtmosphereTablesPath( ) + "MCDMeanAtmosphereTimeAverage/gasConstant.dat";
-    tabulatedAtmosphereFiles[ 4 ] = getAtmosphereTablesPath( ) + "MCDMeanAtmosphereTimeAverage/specificHeatRatio.dat";
-    std::vector< AtmosphereDependentVariables > atmosphereDependentVariables = {
-        density_dependent_atmosphere, pressure_dependent_atmosphere, temperature_dependent_atmosphere,
-        gas_constant_dependent_atmosphere, specific_heat_ratio_dependent_atmosphere };
-    std::vector< AtmosphereIndependentVariables > atmosphereIndependentVariables = {
-        longitude_dependent_atmosphere, latitude_dependent_atmosphere, altitude_dependent_atmosphere };
-    std::vector< interpolators::BoundaryInterpolationType > boundaryConditions = {
-        interpolators::use_boundary_value, interpolators::use_boundary_value, interpolators::use_default_value };
-
-    // Define default extrapolation values
-    std::vector< std::vector< std::pair< double, double > > > extrapolationValues =
-            std::vector< std::vector< std::pair< double, double > > >(
-                5, std::vector< std::pair< double, double > >( 3, std::make_pair( 0.0, 0.0 ) ) );
-    extrapolationValues.at( 0 ).at( 2 ) = { 7.62e-5, 0.0 };
-    extrapolationValues.at( 1 ).at( 2 ) = { 2.35, 0.0 };
-    extrapolationValues.at( 2 ).at( 2 ) = { 1.61e2, 186.813 };
-    extrapolationValues.at( 3 ).at( 2 ) = { 190.7, 8183.0 };
-    extrapolationValues.at( 4 ).at( 2 ) = { 1.377, 1.667 };
-
     // Generate gravitational and atmospheric body settings
-    bodySettings[ "Mars" ]->gravityFieldSettings = boost::make_shared<
-            FromFileSphericalHarmonicsGravityFieldSettings >( jgmro120d );
-    bodySettings[ "Mars" ]->atmosphereSettings = boost::make_shared< TabulatedAtmosphereSettings >(
-                tabulatedAtmosphereFiles, atmosphereIndependentVariables, atmosphereDependentVariables,
-                boundaryConditions, extrapolationValues );
+    bodySettings[ "Earth" ]->gravityFieldSettings = boost::make_shared<
+            FromFileSphericalHarmonicsGravityFieldSettings >( ggm02s );
+    bodySettings[ "Earth" ]->atmosphereSettings = boost::make_shared< ExponentialAtmosphereSettings >(
+                7050.0, 240.0, 1.225, 2.87e2 );
 
     // Save body settings to map
     NamedBodyMap bodyMap = createBodies( bodySettings );
@@ -130,8 +106,8 @@ int main( )
 
     // Create spacecraft object
     bodyMap[ "Satellite" ] = boost::make_shared< Body >( );
-    const double vehicleMass = 1000.0;
-    bodyMap[ "Satellite" ]->setConstantBodyMass( vehicleMass );
+    const double satelliteMass = 1000.0;
+    bodyMap[ "Satellite" ]->setConstantBodyMass( satelliteMass );
 
     // Aerodynamic coefficients from file
     std::map< int, std::string > aerodynamicCoefficientFiles;
@@ -155,7 +131,7 @@ int main( )
     double referenceAreaRadiation = referenceAreaAerodynamic;
     double radiationPressureCoefficient = 1.25;
     std::vector< std::string > occultingBodies;
-    occultingBodies.push_back( "Mars" );
+    occultingBodies.push_back( "Earth" );
     boost::shared_ptr< RadiationPressureInterfaceSettings > SatelliteRadiationPressureSettings =
             boost::make_shared< CannonBallRadiationPressureInterfaceSettings >(
                 "Sun", referenceAreaRadiation, radiationPressureCoefficient, occultingBodies );
@@ -178,45 +154,40 @@ int main( )
 
     // Define propagation settings.
     std::map< std::string, std::vector< boost::shared_ptr< AccelerationSettings > > > accelerationsOfSatellite;
-    accelerationsOfSatellite[ "Mars" ].push_back(
-                boost::make_shared< SphericalHarmonicAccelerationSettings >( 21, 21 ) );
+    accelerationsOfSatellite[ "Earth" ].push_back( boost::make_shared< SphericalHarmonicAccelerationSettings >( 2, 2 ) );
     for ( unsigned int i = 0; i < bodiesToCreate.size( ); i++ )
     {
-        if ( bodiesToCreate.at( i ) != "Mars" )
+        if ( bodiesToCreate.at( i ) != "Earth" )
         {
-            accelerationsOfSatellite[ bodiesToCreate.at( i ) ].push_back( boost::make_shared< AccelerationSettings >(
-                                                                              central_gravity ) );
+            accelerationsOfSatellite[ bodiesToCreate.at( i ) ].push_back( boost::make_shared< AccelerationSettings >( central_gravity ) );
         }
     }
     accelerationsOfSatellite[ "Sun" ].push_back( boost::make_shared< AccelerationSettings >( cannon_ball_radiation_pressure ) );
-    accelerationsOfSatellite[ "Mars" ].push_back( boost::make_shared< AccelerationSettings >( aerodynamic ) );
+    accelerationsOfSatellite[ "Earth" ].push_back( boost::make_shared< AccelerationSettings >( aerodynamic ) );
 
     // Add acceleration information
     accelerationMap[ "Satellite" ] = accelerationsOfSatellite;
     bodiesToPropagate.push_back( "Satellite" );
-    centralBodies.push_back( "Mars" );
+    centralBodies.push_back( "Earth" );
 
-    AccelerationMap accelerationModelMap = createAccelerationModelsMap(
-                bodyMap, accelerationMap, bodiesToPropagate, centralBodies );
+    AccelerationMap accelerationModelMap = createAccelerationModelsMap( bodyMap, accelerationMap, bodiesToPropagate, centralBodies );
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ///////////////////////             INITIAL CONDITIONS                     ////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     // Set Keplerian elements for Asterix.
-    Eigen::Vector6d asterixInitialStateInKeplerianElements;
-    asterixInitialStateInKeplerianElements( semiMajorAxisIndex ) = 23617.8637e3;
-    asterixInitialStateInKeplerianElements( eccentricityIndex ) = 0.833437;
-    asterixInitialStateInKeplerianElements( inclinationIndex ) = unit_conversions::convertDegreesToRadians( 62.8 );
-    asterixInitialStateInKeplerianElements( longitudeOfAscendingNodeIndex )
-            = unit_conversions::convertDegreesToRadians( 23.4 );
-    asterixInitialStateInKeplerianElements( argumentOfPeriapsisIndex )
-            = unit_conversions::convertDegreesToRadians( 280.0 );
-    asterixInitialStateInKeplerianElements( trueAnomalyIndex ) = unit_conversions::convertDegreesToRadians( 0.0 );
+    Eigen::Vector6d satelliteInitialStateInKeplerianElements;
+    satelliteInitialStateInKeplerianElements( semiMajorAxisIndex ) = 26559.0e3;
+    satelliteInitialStateInKeplerianElements( eccentricityIndex ) = 0.70;
+    satelliteInitialStateInKeplerianElements( inclinationIndex ) = convertDegreesToRadians( 63.2 );
+    satelliteInitialStateInKeplerianElements( longitudeOfAscendingNodeIndex ) = convertDegreesToRadians( 206.3 );
+    satelliteInitialStateInKeplerianElements( argumentOfPeriapsisIndex ) = convertDegreesToRadians( 281.6 );
+    satelliteInitialStateInKeplerianElements( trueAnomalyIndex ) = convertDegreesToRadians( 0.0 );
 
-    double marsGravitationalParameter = bodyMap.at( "Mars" )->getGravityFieldModel( )->getGravitationalParameter( );
-    const Eigen::Vector6d asterixInitialState = convertKeplerianToCartesianElements(
-                asterixInitialStateInKeplerianElements, marsGravitationalParameter );
+    double marsGravitationalParameter = bodyMap.at( "Earth" )->getGravityFieldModel( )->getGravitationalParameter( );
+    const Eigen::Vector6d asterixInitialState = convertKeplerianToCartesianElements( satelliteInitialStateInKeplerianElements,
+                                                                                     marsGravitationalParameter );
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ///////////////////////             LOOP OVER NORMALIZATION METHODS        ////////////////////////////////////////////
@@ -226,9 +197,10 @@ int main( )
     //      0: no internal normalization
     //      1: normalization according to BOOK034 with rotational velocity
     //      2: normalization according to BOOK034 with constant factor
-    //      3: normalization of derivative accoding to ART073
-    //      4: normalization of quaternion and its derivative accoding to ART073
-    unsigned int totalNumberOfMethods = 5;
+    //      3: normalization of only quaternion accoding to ART073
+    //      4: normalization of only derivative accoding to ART073
+    //      5: normalization of both quaternion and derivative accoding to ART073
+    unsigned int totalNumberOfMethods = 6;
     for ( unsigned int quaternionNormalizationMethod = 0;
           quaternionNormalizationMethod < ( totalNumberOfMethods + 1 ); quaternionNormalizationMethod++ )
     {
@@ -267,13 +239,25 @@ int main( )
 
         ///////////////////////             PROPAGATE ORBIT            ////////////////////////////////////////////////////////
 
-        // Create simulation object and propagate dynamics
-        SingleArcDynamicsSimulator< > dynamicsSimulator(
-                    bodyMap, integratorSettings, propagatorSettings, true, false, false, true );
-        std::map< double, Eigen::VectorXd > cartesianIntegrationResult = dynamicsSimulator.getEquationsOfMotionNumericalSolution( );
+        // Simulate for 10 times to get a more accurate computation time
+        std::vector< double > computationTimes;
+        unsigned int numberOfSimulations = ( quaternionNormalizationMethod != totalNumberOfMethods ) ? 10 : 1;
+        boost::shared_ptr< SingleArcDynamicsSimulator< > > dynamicsSimulator;
+        for ( unsigned int currentSimulation = 0; currentSimulation < numberOfSimulations; currentSimulation++ )
+        {
+            // Create simulation object and propagate dynamics
+            dynamicsSimulator = boost::make_shared< SingleArcDynamicsSimulator< > >(
+                        bodyMap, integratorSettings, propagatorSettings, true, false, false, true );
+            std::map< double, double > computationTimeMap = dynamicsSimulator->getCumulativeComputationTimeHistory( );
+            computationTimes.push_back( computationTimeMap.rbegin( )->second );
+        }
+        std::cout << "Average Computation Time: " << statistics::computeSampleMean( computationTimes ) << " s" << std::endl;
+
+        // Retrieve results
+        std::map< double, Eigen::VectorXd > cartesianIntegrationResult = dynamicsSimulator->getEquationsOfMotionNumericalSolution( );
         std::map< double, Eigen::VectorXd > unifiedStateModelIntegrationResult =
-                dynamicsSimulator.getEquationsOfMotionNumericalSolutionRaw( );
-        std::map< double, unsigned int > functionEvaluationsMap = dynamicsSimulator.getCumulativeNumberOfFunctionEvaluations( );
+                dynamicsSimulator->getEquationsOfMotionNumericalSolutionRaw( );
+        std::map< double, unsigned int > functionEvaluationsMap = dynamicsSimulator->getCumulativeNumberOfFunctionEvaluations( );
 
         ///////////////////////        PROVIDE OUTPUT TO FILES                       //////////////////////////////////////////
 
