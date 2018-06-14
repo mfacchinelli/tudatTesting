@@ -456,10 +456,8 @@ int main( )
         {
             // Aerodynamic coefficients from file
             std::map< int, std::string > aerodynamicCoefficientFiles;
-            aerodynamicCoefficientFiles[ 0 ] = "/Users/Michele/Library/Mobile Documents/com~apple~CloudDocs/"
-                                               "University/Master Thesis/Code/MATLAB/data/MRODragCoefficients.txt";
-            aerodynamicCoefficientFiles[ 2 ] = "/Users/Michele/Library/Mobile Documents/com~apple~CloudDocs/"
-                                               "University/Master Thesis/Code/MATLAB/data/MROLiftCoefficients.txt";
+            aerodynamicCoefficientFiles[ 0 ] = getTudatRootPath( ) + "External/MRODragCoefficients.txt";
+            aerodynamicCoefficientFiles[ 2 ] = getTudatRootPath( ) + "External/MROLiftCoefficients.txt";
 
             // Create aerodynamic coefficient interface settings.
             aerodynamicCoefficientSettings = readTabulatedAerodynamicCoefficientsFromFiles(
