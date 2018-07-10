@@ -264,6 +264,6 @@ setup_executable_target(application_rotationTest "${SRCROOT}")
 target_link_libraries(application_rotationTest ${TUDAT_APPLICATION_PROPAGATION_LIBRARIES} ${Boost_LIBRARIES} )
 
 # Add quaternion propagation test
-add_executable(application_quaternionTest "${SRCROOT}/quaternionTest.cpp")
-setup_executable_target(application_quaternionTest "${SRCROOT}")
-target_link_libraries(application_quaternionTest ${TUDAT_APPLICATION_PROPAGATION_LIBRARIES} ${Boost_LIBRARIES} )
+#add_executable(application_quaternionTest "${SRCROOT}/quaternionTest.cpp")
+#setup_executable_target(application_quaternionTest "${SRCROOT}")
+#target_link_libraries(application_quaternionTest ${TUDAT_APPLICATION_PROPAGATION_LIBRARIES} ${Boost_LIBRARIES} )

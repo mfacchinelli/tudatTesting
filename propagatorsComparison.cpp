@@ -42,7 +42,7 @@ static inline std::string getOutputPath(
     return outputPath;
 }
 
-//! Function to compute the next step size [Mooij, E.]
+//! Function to compute the next step size (Mooij, E.).
 std::pair< double, bool > computeNewStepSize(
         const double stepSize,
         const std::pair< double, double >& orders,
@@ -395,18 +395,13 @@ int main( )
                 gas_constant_dependent_atmosphere, specific_heat_ratio_dependent_atmosphere };
             std::vector< AtmosphereIndependentVariables > atmosphereIndependentVariables = {
                 longitude_dependent_atmosphere, latitude_dependent_atmosphere, altitude_dependent_atmosphere };
-            std::vector< interpolators::BoundaryInterpolationType > boundaryConditions = {
-                interpolators::use_boundary_value, interpolators::use_boundary_value, interpolators::use_default_value };
+            std::vector< interpolators::BoundaryInterpolationType > boundaryConditions =
+                    std::vector< interpolators::BoundaryInterpolationType >( 3, interpolators::use_boundary_value );
 
             // Define default extrapolation values
             std::vector< std::vector< std::pair< double, double > > > extrapolationValues =
                     std::vector< std::vector< std::pair< double, double > > >(
                         5, std::vector< std::pair< double, double > >( 3, std::make_pair( 0.0, 0.0 ) ) );
-            extrapolationValues.at( 0 ).at( 2 ) = { 7.62e-5, 0.0 };
-            extrapolationValues.at( 1 ).at( 2 ) = { 2.35, 0.0 };
-            extrapolationValues.at( 2 ).at( 2 ) = { 1.61e2, 186.813 };
-            extrapolationValues.at( 3 ).at( 2 ) = { 190.7, 8183.0 };
-            extrapolationValues.at( 4 ).at( 2 ) = { 1.377, 1.667 };
 
             // Generate gravitational and atmospheric body settings
             bodySettings[ simulationCentralBody ]->gravityFieldSettings = boost::make_shared<
@@ -595,10 +590,9 @@ int main( )
 
             // Loop over propagators
             int integratorLimit, valueLimit;
-            double relativeTolerance;
             std::vector< string > nameAdditionPropagator = { "_cowell", "_encke", "_kepl", "_equi", "_usm7", "_usm6", "_usmem", "_ref" };
             std::vector< string > nameAdditionIntegrator = { "_var", "_const" };
-            for ( int propagatorType = 0; propagatorType < 8; propagatorType++ )
+            for ( int propagatorType = 7; propagatorType < 8; propagatorType++ )
             {
                 // Skip Encke and Gauss propagators
                 if ( !( propagatorType == 1 || propagatorType == 2 || propagatorType == 3 ) )
@@ -631,34 +625,32 @@ int main( )
                             {
                                 // Propagator
                                 translationalPropagatorSettings = boost::make_shared< TranslationalStatePropagatorSettings< double > >(
-                                            centralBodies, accelerationModelMap, bodiesToPropagate, SatelliteInitialState, terminationSettings,
-                                            cowell );
+                                            centralBodies, accelerationModelMap, bodiesToPropagate, SatelliteInitialState,
+                                            terminationSettings, cowell );
 
                                 // Integrator
                                 integratorSettings = boost::make_shared< RungeKuttaVariableStepSizeSettings< > >(
                                             rungeKuttaVariableStepSize, simulationStartEpoch, 25.0,
                                             RungeKuttaCoefficients::rungeKuttaFehlberg78, 1e-5, 1e5,
-                                            std::pow( 10, referenceTolerances ), std::pow( 10, referenceTolerances ) );//,
-                                //                                    1, false, 0.8, 4.0, 0.1, &computeNewStepSize );
+                                            std::pow( 10, referenceTolerances ), std::pow( 10, referenceTolerances ) );
                             }
                             else
                             {
                                 // Propagator
                                 translationalPropagatorSettings = boost::make_shared< TranslationalStatePropagatorSettings< double > >(
-                                            centralBodies, accelerationModelMap, bodiesToPropagate, SatelliteInitialState, simulationEndEpoch,
-                                            static_cast< TranslationalPropagatorType >( propagatorType ) );
+                                            centralBodies, accelerationModelMap, bodiesToPropagate, SatelliteInitialState,
+                                            simulationEndEpoch, static_cast< TranslationalPropagatorType >( propagatorType ) );
 
                                 // Integrator
                                 if ( integratorType == 0 )
                                 {
-                                    relativeTolerance = std::pow( 10, relativeTolerances.at( value ) );
+                                    double relativeTolerance = std::pow( 10, relativeTolerances.at( value ) );
                                     integratorSettings = boost::make_shared< RungeKuttaVariableStepSizeSettings< > >(
                                                 rungeKuttaVariableStepSize, simulationStartEpoch, 100.0,
                                                 RungeKuttaCoefficients::rungeKuttaFehlberg56, 1e-5, 1e5,
-                                                relativeTolerance, relativeTolerance );
-//                                                Eigen::Matrix< double, Eigen::Dynamic, 1 >::Constant( stateSizes.at( propagatorType ),
-//                                                                                                      relativeTolerance ),
-//                                                absoluteTolerances.at( propagatorType ) );//, 1, false, 0.8, 4.0, 0.1, &computeNewStepSize );
+                                                Eigen::Matrix< double, Eigen::Dynamic, 1 >::Constant( stateSizes.at( propagatorType ),
+                                                                                                      relativeTolerance ),
+                                                absoluteTolerances.at( propagatorType ) );
                                 }
                                 else if ( integratorType == 1 )
                                 {
@@ -683,8 +675,7 @@ int main( )
                                 std::vector< std::string > bodiesWithMassToPropagate;
                                 bodiesWithMassToPropagate.push_back( "Satellite" );
 
-                                Eigen::VectorXd initialBodyMasses = Eigen::VectorXd( 1 );
-                                initialBodyMasses( 0 ) = satelliteMass;
+                                Eigen::VectorXd initialBodyMasses = Eigen::VectorXd::Constant( 1, satelliteMass );
 
                                 boost::shared_ptr< SingleArcPropagatorSettings< double > > massPropagatorSettings =
                                         boost::make_shared< MassPropagatorSettings< double > >(
@@ -701,7 +692,7 @@ int main( )
 
                             // Simulate for 100 times to get a more accurate computation time
                             std::vector< double > computationTimes;
-                            unsigned int numberOfSimulations = ( propagatorType == 7 ) ? 1 : 100;
+                            unsigned int numberOfSimulations = ( propagatorType == 7 ) ? 1 : 1;
                             boost::shared_ptr< SingleArcDynamicsSimulator< > > dynamicsSimulator;
                             for ( unsigned int currentSimulation = 0; currentSimulation < numberOfSimulations; currentSimulation++ )
                             {
@@ -716,11 +707,6 @@ int main( )
 
                             // Retrieve results
                             std::map< double, Eigen::VectorXd > cartesianIntegrationResult = dynamicsSimulator->getEquationsOfMotionNumericalSolution( );
-                            std::map< double, Eigen::VectorXd > usmIntegrationResult;
-                            if ( propagatorType > 3 && propagatorType < 7 )
-                            {
-                                usmIntegrationResult = dynamicsSimulator->getEquationsOfMotionNumericalSolutionRaw( );
-                            }
                             std::map< double, unsigned int > functionEvaluationsMap = dynamicsSimulator->getCumulativeNumberOfFunctionEvaluations( );
 
                             ///////////////////////     PROVIDE OUTPUT TO FILES             ////////////////////////////////////////////
@@ -759,16 +745,6 @@ int main( )
                                                     "_" + std::to_string( value + 1 ) + ".dat",
                                                     getOutputPath( "Propagators/" + pathAdditionTestCase[ testCase ] ) );
 
-                            if ( propagatorType > 3 && propagatorType < 7 )
-                            {
-                                writeDataMapToTextFile( usmIntegrationResult,
-                                                        "usm" + nameAdditionPropagator[ propagatorType ] +
-                                                        nameAdditionIntegrator[ integratorType ] +
-                                                        "_" + std::to_string( simulationCase + 1 ) +
-                                                        "_" + std::to_string( value + 1 ) + ".dat",
-                                                        getOutputPath( "Propagators/" + pathAdditionTestCase[ testCase ] ) );
-                            }
-
                             // Break loop if reference propagator
                             if ( propagatorType == 7 )
                                 break;
@@ -789,7 +765,6 @@ int main( )
     // Save mean computation times to file
     if ( !singleTestCase )
     {
-        std::cout << "Saving computation times." << std::endl;
         std::map< unsigned int, Eigen::ArrayXd > convertedComputationTimesPerCase =
                 utilities::convertStlVectorMapToEigenVectorMap( totalComputationTimes );
         std::ofstream fileOfComputationTimes( getOutputPath( "Propagators/" ) + "computationTimes.dat" );

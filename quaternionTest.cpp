@@ -195,9 +195,9 @@ int main( )
     //      0: no internal normalization
     //      1: normalization according to BOOK034 with rotational velocity
     //      2: normalization according to BOOK034 with constant factor
-    //      3: normalization of only quaternion accoding to ART073
-    //      4: normalization of only derivative accoding to ART073
-    //      5: normalization of both quaternion and derivative accoding to ART073
+    //      3: normalization of only quaternion according to ART073
+    //      4: normalization of only derivative according to ART073
+    //      5: normalization of both quaternion and derivative according to ART073
     unsigned int totalNumberOfMethods = 6;
     for ( unsigned int quaternionNormalizationMethod = 0;
           quaternionNormalizationMethod < ( totalNumberOfMethods + 1 ); quaternionNormalizationMethod++ )
@@ -210,19 +210,7 @@ int main( )
         // Propagator and integrator settings
         boost::shared_ptr< TranslationalStatePropagatorSettings< double > > propagatorSettings;
         boost::shared_ptr< IntegratorSettings< > > integratorSettings;
-        if ( quaternionNormalizationMethod == totalNumberOfMethods )
-        {
-            // Propagator settings
-            propagatorSettings = boost::make_shared< TranslationalStatePropagatorSettings< double > >
-                    ( centralBodies, accelerationModelMap, bodiesToPropagate, asterixInitialState, simulationEndEpoch,
-                      cowell );
-
-            // Integrator settings
-            integratorSettings = boost::make_shared< RungeKuttaVariableStepSizeSettings< > >(
-                        rungeKuttaVariableStepSize, simulationStartEpoch, 10.0, RungeKuttaCoefficients::rungeKuttaFehlberg78,
-                        1e-5, 1e5, 1e-15, 1e-15 );
-        }
-        else
+        if ( quaternionNormalizationMethod != totalNumberOfMethods )
         {
             // Propagator settings
             propagatorSettings = boost::make_shared< TranslationalStatePropagatorSettings< double > >
@@ -233,6 +221,18 @@ int main( )
             integratorSettings = boost::make_shared< RungeKuttaVariableStepSizeSettings< > >(
                         rungeKuttaVariableStepSize, simulationStartEpoch, 10.0, RungeKuttaCoefficients::rungeKuttaFehlberg56,
                         1e-5, 1e5, 1e-10, 1e-10 );
+        }
+        else
+        {
+            // Propagator settings
+            propagatorSettings = boost::make_shared< TranslationalStatePropagatorSettings< double > >
+                    ( centralBodies, accelerationModelMap, bodiesToPropagate, asterixInitialState, simulationEndEpoch,
+                      cowell );
+
+            // Integrator settings
+            integratorSettings = boost::make_shared< RungeKuttaVariableStepSizeSettings< > >(
+                        rungeKuttaVariableStepSize, simulationStartEpoch, 10.0, RungeKuttaCoefficients::rungeKuttaFehlberg78,
+                        1e-5, 1e5, 1e-15, 1e-15 );
         }
 
         ///////////////////////             PROPAGATE ORBIT            ////////////////////////////////////////////////////////
