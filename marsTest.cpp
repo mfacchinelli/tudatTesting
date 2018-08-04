@@ -93,6 +93,7 @@ int main( )
             boost::make_shared< FromFileSphericalHarmonicsGravityFieldSettings >( jgmro120d );
     bodySettings[ "Mars" ]->atmosphereSettings =
             boost::make_shared< TabulatedAtmosphereSettings >( atmosphereFile, atmosphereDependentVariables );
+
     NamedBodyMap bodyMap = createBodies( bodySettings );
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

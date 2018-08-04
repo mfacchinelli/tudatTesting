@@ -55,6 +55,7 @@ int main( )
     using namespace tudat::mathematical_constants;
     using namespace tudat::input_output;
     using namespace tudat::aerodynamics;
+    using namespace tudat::sparta_interface;
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////
     ///////////////////////            TABULATED ATMOSPHERE          ////////////////////////////////////////

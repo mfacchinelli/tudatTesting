@@ -187,7 +187,6 @@ list(APPEND TUDAT_APPLICATION_EXTERNAL_LIBRARIES "")
 list(APPEND TUDAT_APPLICATION_EXTERNAL_INTERFACE_LIBRARIES "")
 list(APPEND TUDAT_APPLICATION_ITRS_LIBRARIES "")
 
-
 if(USE_SOFA)
  list(APPEND TUDAT_APPLICATION_EXTERNAL_LIBRARIES sofa)
  list(APPEND TUDAT_APPLICATION_EXTERNAL_INTERFACE_LIBRARIES tudat_sofa_interface )
@@ -208,9 +207,11 @@ if(USE_NRLMSISE00)
 endif()
 
 #if(USE_SPARTA)
+#    add_definitions(-DUSE_SPARTA=1)
 #    list(APPEND TUDAT_APPLICATION_EXTERNAL_LIBRARIES tudat_sparta_interface)
+#else()
+##    add_definitions(-DUSE_SPARTA=0)
 #endif()
-
 
 list(APPEND TUDAT_APPLICATION_PROPAGATION_LIBRARIES tudat_simulation_setup tudat_ground_stations tudat_propagators
    tudat_aerodynamics tudat_system_models tudat_geometric_shapes tudat_relativity tudat_gravitation tudat_mission_segments
@@ -253,10 +254,12 @@ target_link_libraries(application_atmosphereTest tudat_aerodynamics tudat_input_
     tudat_basic_mathematics tudat_basic_astrodynamics ${Boost_LIBRARIES} )
 
 # Add SPARTA test
-#add_executable(application_spartaTest "${SRCROOT}/spartaTest.cpp")
-#setup_executable_target(application_spartaTest "${SRCROOT}")
-#target_link_libraries(application_spartaTest tudat_aerodynamics tudat_input_output tudat_basic_mathematics
-#    tudat_basic_astrodynamics tudat_sparta_interface ${Boost_LIBRARIES} )
+#if(USE_SPARTA)
+#    add_executable(application_spartaTest "${SRCROOT}/spartaTest.cpp")
+#    setup_executable_target(application_spartaTest "${SRCROOT}")
+#    target_link_libraries(application_spartaTest tudat_aerodynamics tudat_input_output tudat_basic_mathematics
+#        tudat_basic_astrodynamics tudat_sparta_interface ${Boost_LIBRARIES} )
+#endif()
 
 # Add rotational motion test
 add_executable(application_rotationTest "${SRCROOT}/rotationTest.cpp")

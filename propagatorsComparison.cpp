@@ -592,7 +592,7 @@ int main( )
             int integratorLimit, valueLimit;
             std::vector< string > nameAdditionPropagator = { "_cowell", "_encke", "_kepl", "_equi", "_usm7", "_usm6", "_usmem", "_ref" };
             std::vector< string > nameAdditionIntegrator = { "_var", "_const" };
-            for ( int propagatorType = 7; propagatorType < 8; propagatorType++ )
+            for ( unsigned int propagatorType = 7; propagatorType < 8; propagatorType++ )
             {
                 // Skip Encke and Gauss propagators
                 if ( !( propagatorType == 1 || propagatorType == 2 || propagatorType == 3 ) )
@@ -602,14 +602,14 @@ int main( )
 
                     // Loop over integrators
                     integratorLimit = ( propagatorType == 7 ) ? 1 : 2; // only use the variable step size integrator
-                    for ( int integratorType = 0; integratorType < integratorLimit; integratorType++ )
+                    for ( unsigned int integratorType = 0; integratorType < integratorLimit; integratorType++ )
                     {
                         // Progress
                         std::cout << "Integrator: " << integratorType + 1 << std::endl;
 
                         // Loop over relativeTolerances and constant time step
                         valueLimit = ( integratorType == 0 ) ? relativeTolerances.size( ) : constantTimeStep.size( );
-                        for ( int value = 0; value < valueLimit; value++ )
+                        for ( unsigned int value = 0; value < valueLimit; value++ )
                         {
                             // Progress
                             std::cout << "Value: " << value + 1 << std::endl;
