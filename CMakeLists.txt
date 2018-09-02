@@ -208,9 +208,9 @@ endif()
 
 #if(USE_SPARTA)
 #    add_definitions(-DUSE_SPARTA=1)
-#    list(APPEND TUDAT_APPLICATION_EXTERNAL_LIBRARIES tudat_sparta_interface)
+#    list(APPEND TUDAT_APPLICATION_EXTERNAL_INTERFACE_LIBRARIES tudat_sparta_interface)
 #else()
-##    add_definitions(-DUSE_SPARTA=0)
+#    add_definitions(-DUSE_SPARTA=0)
 #endif()
 
 list(APPEND TUDAT_APPLICATION_PROPAGATION_LIBRARIES tudat_simulation_setup tudat_ground_stations tudat_propagators

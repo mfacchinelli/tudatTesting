@@ -94,7 +94,7 @@ int main( )
     /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     // Define inputs
-    const std::string SPARTAExecutable = "/Users/Michele/Software/SPARTA/src/spa_mac_mpi";
+    const std::string SpartaExecutable = "/Users/Michele/Software/SPARTA/src/spa_mac_mpi";
     const int numberOfCores = 2;
     const std::string geometryFileUser = getSpartaDataPath( ) + "data/data.mro"; // check that it is not called data.shape
     const double referenceArea = 37.5;//3.12715;
@@ -136,7 +136,7 @@ int main( )
                 wallTemperature,
                 accomodationCoefficient,
                 false,
-                SPARTAExecutable,
+                SpartaExecutable,
                 "/usr/local/bin/mpirun",
                 numberOfCores );
 

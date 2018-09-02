@@ -269,13 +269,11 @@ int main( )
     {
     case 0:
         integratorSettings = boost::make_shared< RungeKuttaVariableStepSizeSettings< > >(
-                    rungeKuttaVariableStepSize, simulationStartEpoch, 10,
-                    RungeKuttaCoefficients::rungeKuttaFehlberg78, 1e-3, 1e4, 1e-15, 1e-15 );
+                    simulationStartEpoch, 10, RungeKuttaCoefficients::rungeKuttaFehlberg78, 1e-3, 1e4, 1e-15, 1e-15 );
         break;
     case 1:
         integratorSettings = boost::make_shared< RungeKuttaVariableStepSizeSettings< > >(
-                    rungeKuttaVariableStepSize, simulationStartEpoch, 100.0,
-                    RungeKuttaCoefficients::rungeKuttaFehlberg56, 1e-1, 1e5, 1e-7, 1e-7 );
+                    simulationStartEpoch, 100.0, RungeKuttaCoefficients::rungeKuttaFehlberg56, 1e-1, 1e5, 1e-7, 1e-7 );
         break;
     case 2:
         integratorSettings = boost::make_shared< IntegratorSettings< > > (

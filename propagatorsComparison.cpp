@@ -130,8 +130,8 @@ int main( )
     //      4: Molniya orbit
     //      5: Low-thrust trajectory
     const std::vector< std::string > pathAdditionTestCase = { "aero", "aero_full", "inter", "circ", "moln", "low_thrust" };
-    const bool singleTestCase = false;
-    unsigned int initialTestCase = 0;
+    const bool singleTestCase = true;
+    unsigned int initialTestCase = 1;
     initialTestCase = singleTestCase ? initialTestCase : 0;
 
     // Start loop
@@ -278,12 +278,12 @@ int main( )
 
             cartesianTolerances = Eigen::VectorXd::Zero( 7 );
             cartesianTolerances.segment( 0, 6 ) = Eigen::VectorXd::Constant( 6, velocityTolerance );
-            cartesianTolerances[ 6 ] = 1;
+            cartesianTolerances[ 6 ] = 1; // integration is not influenced by error in mass propagation
 
             usmTolerances = Eigen::VectorXd::Zero( 8 );
             usmTolerances.segment( 0, 3 ) = Eigen::VectorXd::Constant( 3, velocityTolerance );
             usmTolerances.segment( 3, 4 ) = Eigen::VectorXd::Constant( 4, quaternionTolerance );
-            usmTolerances[ 7 ] = 1;
+            usmTolerances[ 7 ] = 1; // integration is not influenced by error in mass propagation
 
             // Set simulation central body
             simulationCentralBody = "Earth";
@@ -516,7 +516,7 @@ int main( )
                             boost::make_shared< ThrustAccelerationSettings >( thrustDirectionGuidanceSettings, thrustMagnitudeSettings ) );
                 // no break, so add more accelerations
             }
-            case 0:
+                BOOST_FALLTHROUGH; case 0:
             case 1:
             case 3:
             case 4:
@@ -589,7 +589,7 @@ int main( )
             absoluteTolerances.at( 7 ) = cartesianTolerances;
 
             // Loop over propagators
-            int integratorLimit, valueLimit;
+            unsigned int integratorLimit, valueLimit;
             std::vector< string > nameAdditionPropagator = { "_cowell", "_encke", "_kepl", "_equi", "_usm7", "_usm6", "_usmem", "_ref" };
             std::vector< string > nameAdditionIntegrator = { "_var", "_const" };
             for ( unsigned int propagatorType = 7; propagatorType < 8; propagatorType++ )
@@ -630,9 +630,8 @@ int main( )
 
                                 // Integrator
                                 integratorSettings = boost::make_shared< RungeKuttaVariableStepSizeSettings< > >(
-                                            rungeKuttaVariableStepSize, simulationStartEpoch, 25.0,
-                                            RungeKuttaCoefficients::rungeKuttaFehlberg78, 1e-5, 1e5,
-                                            std::pow( 10, referenceTolerances ), std::pow( 10, referenceTolerances ) );
+                                            simulationStartEpoch, 25.0, RungeKuttaCoefficients::rungeKuttaFehlberg78, 1e-5, 1e5,
+                                            std::pow( 10, referenceTolerances ), std::pow( 10, referenceTolerances ), 10 );
                             }
                             else
                             {
@@ -646,16 +645,15 @@ int main( )
                                 {
                                     double relativeTolerance = std::pow( 10, relativeTolerances.at( value ) );
                                     integratorSettings = boost::make_shared< RungeKuttaVariableStepSizeSettings< > >(
-                                                rungeKuttaVariableStepSize, simulationStartEpoch, 100.0,
-                                                RungeKuttaCoefficients::rungeKuttaFehlberg56, 1e-5, 1e5,
+                                                simulationStartEpoch, 100.0, RungeKuttaCoefficients::rungeKuttaFehlberg56, 1e-5, 1e5,
                                                 Eigen::Matrix< double, Eigen::Dynamic, 1 >::Constant( stateSizes.at( propagatorType ),
                                                                                                       relativeTolerance ),
-                                                absoluteTolerances.at( propagatorType ) );
+                                                absoluteTolerances.at( propagatorType ), 10 );
                                 }
                                 else if ( integratorType == 1 )
                                 {
                                     integratorSettings = boost::make_shared< IntegratorSettings< > >(
-                                                rungeKutta4, simulationStartEpoch, constantTimeStep.at( value ) );
+                                                rungeKutta4, simulationStartEpoch, constantTimeStep.at( value ), 10 );
                                 }
                             }
 
@@ -688,7 +686,6 @@ int main( )
                                         propagatorSettingsVector, terminationSettings );
 
                             ///////////////////////     PROPAGATE ORBIT                     ////////////////////////////////////////////
-
 
                             // Simulate for 100 times to get a more accurate computation time
                             std::vector< double > computationTimes;

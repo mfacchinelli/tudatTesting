@@ -193,8 +193,7 @@ int main( )
     // Integrator settings
 //    boost::shared_ptr< IntegratorSettings< > > integratorSettings =
 //            boost::make_shared< RungeKuttaVariableStepSizeSettings< > >(
-//                rungeKuttaVariableStepSize, simulationStartEpoch, 1.0,
-//                RungeKuttaCoefficients::rungeKuttaFehlberg56, 1e-3, 1e3, 1e-12, 1e-12 );
+//                simulationStartEpoch, 1.0, RungeKuttaCoefficients::rungeKuttaFehlberg56, 1e-3, 1e3, 1e-12, 1e-12 );
     boost::shared_ptr< IntegratorSettings< > > integratorSettings =
             boost::make_shared< IntegratorSettings< > > (
                 rungeKutta4, simulationStartEpoch, 1.0 );
