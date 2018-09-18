@@ -247,6 +247,10 @@ add_executable(application_propagatorsComparison "${SRCROOT}/propagatorsComparis
 setup_executable_target(application_propagatorsComparison "${SRCROOT}")
 target_link_libraries(application_propagatorsComparison ${TUDAT_APPLICATION_PROPAGATION_LIBRARIES} ${Boost_LIBRARIES} )
 
+add_executable(application_propagatorsComparisonExtra "${SRCROOT}/propagatorsComparisonExtra.cpp")
+setup_executable_target(application_propagatorsComparisonExtra "${SRCROOT}")
+target_link_libraries(application_propagatorsComparisonExtra ${TUDAT_APPLICATION_PROPAGATION_LIBRARIES} ${Boost_LIBRARIES} )
+
 # Add tabulated atmosphere test
 add_executable(application_atmosphereTest "${SRCROOT}/atmosphereTest.cpp")
 setup_executable_target(application_atmosphereTest "${SRCROOT}")

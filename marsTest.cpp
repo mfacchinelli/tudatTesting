@@ -191,12 +191,12 @@ int main( )
               unified_state_model_exponential_map ); // unified_state_model_exponential_map
 
     // Integrator settings
-//    boost::shared_ptr< IntegratorSettings< > > integratorSettings =
-//            boost::make_shared< RungeKuttaVariableStepSizeSettings< > >(
-//                simulationStartEpoch, 1.0, RungeKuttaCoefficients::rungeKuttaFehlberg56, 1e-3, 1e3, 1e-12, 1e-12 );
     boost::shared_ptr< IntegratorSettings< > > integratorSettings =
-            boost::make_shared< IntegratorSettings< > > (
-                rungeKutta4, simulationStartEpoch, 1.0 );
+            boost::make_shared< RungeKuttaVariableStepSizeSettings< > >( rungeKuttaVariableStepSize,
+                simulationStartEpoch, 1.0, RungeKuttaCoefficients::rungeKuttaFehlberg56, 1e-3, 1e3, 1e-12, 1e-12 );
+//    boost::shared_ptr< IntegratorSettings< > > integratorSettings =
+//            boost::make_shared< IntegratorSettings< > > (
+//                rungeKutta4, simulationStartEpoch, 1.0 );
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ///////////////////////             PROPAGATE ORBIT            ////////////////////////////////////////////////////////

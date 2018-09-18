@@ -131,7 +131,7 @@ int main( )
     //      5: Low-thrust trajectory
     const std::vector< std::string > pathAdditionTestCase = { "aero", "aero_full", "inter", "circ", "moln", "low_thrust" };
     const bool singleTestCase = true;
-    unsigned int initialTestCase = 0;
+    unsigned int initialTestCase = 1;
     initialTestCase = singleTestCase ? initialTestCase : 0;
 
     // Start loop
@@ -175,7 +175,7 @@ int main( )
         case 0: // Aerocapture
         {
             // Set simulation time settings
-            simulationDuration = 0.35 * physical_constants::JULIAN_DAY;
+            simulationDuration = 0.625 * physical_constants::JULIAN_DAY;
             constantTimeStep = { 1.0, 5.0, 10.0, 25.0, 50.0, 75.0, 100.0, 150.0, 200.0 };
 
             // Set simulation central body
@@ -276,11 +276,11 @@ int main( )
             stateSizes = { 7, 7, 7, 7, 8, 8, 8, 7 };
             absoluteTolerancesSet = true;
 
-            cartesianTolerances.resize( 7 );
+            cartesianTolerances = Eigen::VectorXd::Zero( 7 );
             cartesianTolerances.segment( 0, 6 ) = Eigen::VectorXd::Constant( 6, velocityTolerance );
             cartesianTolerances[ 6 ] = 1; // integration is not influenced by error in mass propagation
 
-            usmTolerances.resize( 8 );
+            usmTolerances = Eigen::VectorXd::Zero( 8 );
             usmTolerances.segment( 0, 3 ) = Eigen::VectorXd::Constant( 3, velocityTolerance );
             usmTolerances.segment( 3, 4 ) = Eigen::VectorXd::Constant( 4, quaternionTolerance );
             usmTolerances[ 7 ] = 1; // integration is not influenced by error in mass propagation
@@ -311,11 +311,11 @@ int main( )
         // Fill in standard tolerances
         if ( !absoluteTolerancesSet )
         {
-            cartesianTolerances.resize( 6 );
-            cartesianTolerances.setConstant( velocityTolerance );
-            usmTolerances.resize( 7 );
-            usmTolerances.segment( 0, 3 ) = Eigen::Vector3d::Constant( velocityTolerance );
-            usmTolerances.segment( 3, 4 ) = Eigen::Vector4d::Constant( quaternionTolerance );
+            cartesianTolerances = Eigen::VectorXd::Zero( 6 );
+            cartesianTolerances = Eigen::VectorXd::Constant( 6, velocityTolerance );
+            usmTolerances = Eigen::VectorXd::Zero( 7 );
+            usmTolerances.segment( 0, 3 ) = Eigen::VectorXd::Constant( 3, velocityTolerance );
+            usmTolerances.segment( 3, 4 ) = Eigen::VectorXd::Constant( 4, quaternionTolerance );
         }
 
         // Give error is folder is not defined
@@ -619,7 +619,7 @@ int main( )
 
                             // Propagator and integrator settings
                             boost::shared_ptr< TranslationalStatePropagatorSettings< double > > translationalPropagatorSettings;
-                            boost::shared_ptr< IntegratorSettings< double > > integratorSettings;
+                            boost::shared_ptr< IntegratorSettings< > > integratorSettings;
                             boost::shared_ptr< PropagationTimeTerminationSettings > terminationSettings =
                                     boost::make_shared< PropagationTimeTerminationSettings >( simulationEndEpoch );
                             if ( propagatorType == 7 )
@@ -630,7 +630,7 @@ int main( )
                                             terminationSettings, cowell );
 
                                 // Integrator
-                                integratorSettings = boost::make_shared< RungeKuttaVariableStepSizeSettingsScalarTolerances< double > >(
+                                integratorSettings = boost::make_shared< RungeKuttaVariableStepSizeSettingsScalarTolerances< > >(
                                             simulationStartEpoch, 25.0, RungeKuttaCoefficients::rungeKuttaFehlberg78, 1e-5, 1e5,
                                             std::pow( 10, referenceTolerances ), std::pow( 10, referenceTolerances ), 10 );
                             }
@@ -645,8 +645,7 @@ int main( )
                                 if ( integratorType == 0 )
                                 {
                                     double relativeTolerance = std::pow( 10, relativeTolerances.at( value ) );
-                                    integratorSettings = boost::make_shared<
-                                            RungeKuttaVariableStepSizeSettingsVectorTolerances< double, Eigen::VectorXd > >(
+                                    integratorSettings = boost::make_shared< RungeKuttaVariableStepSizeSettingsVectorTolerances< > >(
                                                 simulationStartEpoch, 100.0, RungeKuttaCoefficients::rungeKuttaFehlberg56, 1e-5, 1e5,
                                                 Eigen::Matrix< double, Eigen::Dynamic, 1 >::Constant( stateSizes.at( propagatorType ),
                                                                                                       relativeTolerance ),
@@ -683,9 +682,16 @@ int main( )
 
                                 propagatorSettingsVector.push_back( massPropagatorSettings );
                             }
+                            std::vector< boost::shared_ptr< SingleDependentVariableSaveSettings > > dependentVariablesList;
+                            dependentVariablesList.push_back(
+                                        boost::make_shared< SphericalHarmonicAccelerationTermsDependentVariableSaveSettings >(
+                                            "Satellite", "Mars", 4, 4 ) );
+                            dependentVariablesList.push_back( boost::make_shared< SingleAccelerationDependentVariableSaveSettings >(
+                                                                  aerodynamic, "Satellite", "Mars" ) );
                             boost::shared_ptr< PropagatorSettings< double > > propagatorSettings =
                                     boost::make_shared< MultiTypePropagatorSettings< double > >(
-                                        propagatorSettingsVector, terminationSettings );
+                                        propagatorSettingsVector, terminationSettings,
+                                        boost::make_shared< DependentVariableSaveSettings >( dependentVariablesList, false ) );
 
                             ///////////////////////     PROPAGATE ORBIT                     ////////////////////////////////////////////
 
@@ -745,6 +751,13 @@ int main( )
                                                     "_" + std::to_string( simulationCase + 1 ) +
                                                     "_" + std::to_string( value + 1 ) + ".dat",
                                                     getOutputPath( "Propagators/" + pathAdditionTestCase[ testCase ] ) );
+
+                            writeDataMapToTextFile( dynamicsSimulator->getDependentVariableHistory( ),
+                                                    "dependent" + nameAdditionPropagator[ propagatorType ] +
+                                                    nameAdditionIntegrator[ integratorType ] +
+                                                    "_" + std::to_string( simulationCase + 1 ) +
+                                                    "_" + std::to_string( value + 1 ) + ".dat",
+                                                    "/Users/Michele/Desktop/" );
 
                             // Break loop if reference propagator
                             if ( propagatorType == 7 )
