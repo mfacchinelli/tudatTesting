@@ -131,7 +131,7 @@ int main( )
     //      5: Low-thrust trajectory
     const std::vector< std::string > pathAdditionTestCase = { "aero", "aero_full", "inter", "circ", "moln", "low_thrust" };
     const bool singleTestCase = true;
-    unsigned int initialTestCase = 0;
+    unsigned int initialTestCase = 1;
     initialTestCase = singleTestCase ? initialTestCase : 0;
 
     // Start loop
@@ -176,7 +176,7 @@ int main( )
         {
             // Set simulation time settings
             simulationDuration = 0.35 * physical_constants::JULIAN_DAY;
-            constantTimeStep = { 1.0, 5.0, 10.0, 25.0, 50.0, 75.0, 100.0, 150.0, 200.0 };
+            constantTimeStep = { 1.0, 5.0, 10.0, 25.0, 50.0, 75.0, 100.0, 150.0, 250.0 };
 
             // Set simulation central body
             simulationCentralBody = "Mars";
@@ -195,7 +195,7 @@ int main( )
         {
             // Set simulation time settings.
             simulationDuration = 145.0 * physical_constants::JULIAN_DAY;
-            constantTimeStep = { 20.0, 30.0, 40.0, 50.0, 75.0, 100.0, 150.0, 200.0, 250.0, 300.0 };
+            constantTimeStep = { 1.0, 5.0, 10.0, 25.0, 50.0, 75.0, 100.0, 150.0, 250.0 };
 
             // Set simulation central body
             simulationCentralBody = "Mars";
@@ -214,7 +214,7 @@ int main( )
         {
             // Set simulation time settings.
             simulationDuration = 260.0 * physical_constants::JULIAN_DAY;
-            constantTimeStep = { 25.0, 50.0, 100.0, 200.0, 400.0, 800.0, 1200.0 };
+            constantTimeStep = { 10.0, 25.0, 50.0, 75.0, 100.0, 150.0, 200.0, 250.0, 300.0, 500.0 };
 
             // Set simulation central body
             simulationCentralBody = "Sun";
@@ -764,7 +764,7 @@ int main( )
     }
 
     // Save mean computation times to file
-    if ( !singleTestCase )
+//    if ( !singleTestCase )
     {
         std::map< unsigned int, Eigen::ArrayXd > convertedComputationTimesPerCase =
                 utilities::convertStlVectorMapToEigenVectorMap( totalComputationTimes );

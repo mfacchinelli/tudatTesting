@@ -227,35 +227,35 @@ list(APPEND TUDAT_APPLICATION_ESTIMATION_LIBRARIES tudat_simulation_setup tudat_
    tudat_filters tudat_basic_mathematics tudat_input_output tudat_basics ${TUDAT_APPLICATION_EXTERNAL_LIBRARIES})
 
 
-# Add aerobraking test
-add_executable(application_aerobrakingTest "${SRCROOT}/aerobrakingTest.cpp")
-setup_executable_target(application_aerobrakingTest "${SRCROOT}")
-target_link_libraries(application_aerobrakingTest ${TUDAT_APPLICATION_PROPAGATION_LIBRARIES} ${Boost_LIBRARIES} )
+## Add aerobraking test
+#add_executable(application_aerobrakingTest "${SRCROOT}/aerobrakingTest.cpp")
+#setup_executable_target(application_aerobrakingTest "${SRCROOT}")
+#target_link_libraries(application_aerobrakingTest ${TUDAT_APPLICATION_PROPAGATION_LIBRARIES} ${Boost_LIBRARIES} )
 
-# Add Mars test
-add_executable(application_marsTest "${SRCROOT}/marsTest.cpp")
-setup_executable_target(application_marsTest "${SRCROOT}")
-target_link_libraries(application_marsTest ${TUDAT_APPLICATION_PROPAGATION_LIBRARIES} ${Boost_LIBRARIES} )
+## Add Mars test
+#add_executable(application_marsTest "${SRCROOT}/marsTest.cpp")
+#setup_executable_target(application_marsTest "${SRCROOT}")
+#target_link_libraries(application_marsTest ${TUDAT_APPLICATION_PROPAGATION_LIBRARIES} ${Boost_LIBRARIES} )
 
-# Add conversion test
-add_executable(application_conversionTest "${SRCROOT}/conversionTest.cpp")
-setup_executable_target(application_conversionTest "${SRCROOT}")
-target_link_libraries(application_conversionTest ${TUDAT_APPLICATION_PROPAGATION_LIBRARIES} ${Boost_LIBRARIES} )
+## Add conversion test
+#add_executable(application_conversionTest "${SRCROOT}/conversionTest.cpp")
+#setup_executable_target(application_conversionTest "${SRCROOT}")
+#target_link_libraries(application_conversionTest ${TUDAT_APPLICATION_PROPAGATION_LIBRARIES} ${Boost_LIBRARIES} )
 
 # Add propagators comparison
 add_executable(application_propagatorsComparison "${SRCROOT}/propagatorsComparison.cpp")
 setup_executable_target(application_propagatorsComparison "${SRCROOT}")
 target_link_libraries(application_propagatorsComparison ${TUDAT_APPLICATION_PROPAGATION_LIBRARIES} ${Boost_LIBRARIES} )
 
-add_executable(application_propagatorsComparisonExtra "${SRCROOT}/propagatorsComparisonExtra.cpp")
-setup_executable_target(application_propagatorsComparisonExtra "${SRCROOT}")
-target_link_libraries(application_propagatorsComparisonExtra ${TUDAT_APPLICATION_PROPAGATION_LIBRARIES} ${Boost_LIBRARIES} )
+#add_executable(application_propagatorsComparisonExtra "${SRCROOT}/propagatorsComparisonExtra.cpp")
+#setup_executable_target(application_propagatorsComparisonExtra "${SRCROOT}")
+#target_link_libraries(application_propagatorsComparisonExtra ${TUDAT_APPLICATION_PROPAGATION_LIBRARIES} ${Boost_LIBRARIES} )
 
-# Add tabulated atmosphere test
-add_executable(application_atmosphereTest "${SRCROOT}/atmosphereTest.cpp")
-setup_executable_target(application_atmosphereTest "${SRCROOT}")
-target_link_libraries(application_atmosphereTest tudat_aerodynamics tudat_input_output tudat_interpolators
-    tudat_basic_mathematics tudat_basic_astrodynamics ${Boost_LIBRARIES} )
+## Add tabulated atmosphere test
+#add_executable(application_atmosphereTest "${SRCROOT}/atmosphereTest.cpp")
+#setup_executable_target(application_atmosphereTest "${SRCROOT}")
+#target_link_libraries(application_atmosphereTest tudat_aerodynamics tudat_input_output tudat_interpolators
+#    tudat_basic_mathematics tudat_basic_astrodynamics ${Boost_LIBRARIES} )
 
 # Add SPARTA test
 #if(USE_SPARTA)
@@ -265,10 +265,10 @@ target_link_libraries(application_atmosphereTest tudat_aerodynamics tudat_input_
 #        tudat_basic_astrodynamics tudat_sparta_interface ${Boost_LIBRARIES} )
 #endif()
 
-# Add rotational motion test
-add_executable(application_rotationTest "${SRCROOT}/rotationTest.cpp")
-setup_executable_target(application_rotationTest "${SRCROOT}")
-target_link_libraries(application_rotationTest ${TUDAT_APPLICATION_PROPAGATION_LIBRARIES} ${Boost_LIBRARIES} )
+## Add rotational motion test
+#add_executable(application_rotationTest "${SRCROOT}/rotationTest.cpp")
+#setup_executable_target(application_rotationTest "${SRCROOT}")
+#target_link_libraries(application_rotationTest ${TUDAT_APPLICATION_PROPAGATION_LIBRARIES} ${Boost_LIBRARIES} )
 
 # Add quaternion propagation test
 #add_executable(application_quaternionTest "${SRCROOT}/quaternionTest.cpp")
