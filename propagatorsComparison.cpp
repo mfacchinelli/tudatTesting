@@ -186,8 +186,8 @@ int main( )
             satelliteInitialStateInKeplerianElements( semiMajorAxisIndex ) = -17305.0e3;
             satelliteInitialStateInKeplerianElements( eccentricityIndex ) = 1.2;
             satelliteInitialStateInKeplerianElements( inclinationIndex ) = convertDegreesToRadians( 93.0 );
-            satelliteInitialStateInKeplerianElements( longitudeOfAscendingNodeIndex ) = convertDegreesToRadians( 158.7 );
             satelliteInitialStateInKeplerianElements( argumentOfPeriapsisIndex ) = convertDegreesToRadians( 23.4 );
+            satelliteInitialStateInKeplerianElements( longitudeOfAscendingNodeIndex ) = convertDegreesToRadians( 158.7 );
             satelliteInitialStateInKeplerianElements( trueAnomalyIndex ) = convertDegreesToRadians( 230.0 );
             break;
         }
@@ -205,8 +205,8 @@ int main( )
             satelliteInitialStateInKeplerianElements( semiMajorAxisIndex ) = 27228500.0;
             satelliteInitialStateInKeplerianElements( eccentricityIndex ) = 0.869218;
             satelliteInitialStateInKeplerianElements( inclinationIndex ) = convertDegreesToRadians( 93.0 );
-            satelliteInitialStateInKeplerianElements( longitudeOfAscendingNodeIndex ) = convertDegreesToRadians( 158.7 );
             satelliteInitialStateInKeplerianElements( argumentOfPeriapsisIndex ) = convertDegreesToRadians( 23.4 );
+            satelliteInitialStateInKeplerianElements( longitudeOfAscendingNodeIndex ) = convertDegreesToRadians( 158.7 );
             satelliteInitialStateInKeplerianElements( trueAnomalyIndex ) = convertDegreesToRadians( 180.0 );
             break;
         }
@@ -223,8 +223,8 @@ int main( )
             satelliteInitialStateInKeplerianElements( semiMajorAxisIndex ) = 188768611.5e3;
             satelliteInitialStateInKeplerianElements( eccentricityIndex ) = 0.207505835788806;
             satelliteInitialStateInKeplerianElements( inclinationIndex ) = convertDegreesToRadians( 2.5 );
-            satelliteInitialStateInKeplerianElements( longitudeOfAscendingNodeIndex ) = convertDegreesToRadians( 328.6 );
             satelliteInitialStateInKeplerianElements( argumentOfPeriapsisIndex ) = convertDegreesToRadians( 147.8 );
+            satelliteInitialStateInKeplerianElements( longitudeOfAscendingNodeIndex ) = convertDegreesToRadians( 328.6 );
             satelliteInitialStateInKeplerianElements( trueAnomalyIndex ) = convertDegreesToRadians( 0.0 );
             break;
         }
@@ -242,8 +242,8 @@ int main( )
             satelliteInitialStateInKeplerianElements( semiMajorAxisIndex ) = 6936.0e3;
             satelliteInitialStateInKeplerianElements( eccentricityIndex ) = 0.0;
             satelliteInitialStateInKeplerianElements( inclinationIndex ) = convertDegreesToRadians( 28.5 );
-            satelliteInitialStateInKeplerianElements( longitudeOfAscendingNodeIndex ) = convertDegreesToRadians( 194.8 );
             satelliteInitialStateInKeplerianElements( argumentOfPeriapsisIndex ) = convertDegreesToRadians( 272.3 );
+            satelliteInitialStateInKeplerianElements( longitudeOfAscendingNodeIndex ) = convertDegreesToRadians( 194.8 );
             satelliteInitialStateInKeplerianElements( trueAnomalyIndex ) = convertDegreesToRadians( 0.0 );
             break;
         }
@@ -261,8 +261,8 @@ int main( )
             satelliteInitialStateInKeplerianElements( semiMajorAxisIndex ) = 26559.0e3;
             satelliteInitialStateInKeplerianElements( eccentricityIndex ) = 0.70;
             satelliteInitialStateInKeplerianElements( inclinationIndex ) = convertDegreesToRadians( 63.2 );
-            satelliteInitialStateInKeplerianElements( longitudeOfAscendingNodeIndex ) = convertDegreesToRadians( 206.3 );
             satelliteInitialStateInKeplerianElements( argumentOfPeriapsisIndex ) = convertDegreesToRadians( 281.6 );
+            satelliteInitialStateInKeplerianElements( longitudeOfAscendingNodeIndex ) = convertDegreesToRadians( 206.3 );
             satelliteInitialStateInKeplerianElements( trueAnomalyIndex ) = convertDegreesToRadians( 0.0 );
             break;
         }
@@ -297,8 +297,8 @@ int main( )
             satelliteInitialStateInKeplerianElements( semiMajorAxisIndex ) = 6378.1363e3 + 1000e3;
             satelliteInitialStateInKeplerianElements( eccentricityIndex ) = 0.0;
             satelliteInitialStateInKeplerianElements( inclinationIndex ) = convertDegreesToRadians( 0.0 );
-            satelliteInitialStateInKeplerianElements( longitudeOfAscendingNodeIndex ) = convertDegreesToRadians( 0.0 );
             satelliteInitialStateInKeplerianElements( argumentOfPeriapsisIndex ) = convertDegreesToRadians( 0.0 );
+            satelliteInitialStateInKeplerianElements( longitudeOfAscendingNodeIndex ) = convertDegreesToRadians( 0.0 );
             satelliteInitialStateInKeplerianElements( trueAnomalyIndex ) = convertDegreesToRadians( 0.0 );
             break;
         }
